@@ -1,0 +1,60 @@
+Name:                   structured-script-lang
+Version:                0.0.0
+Author:                 Scott Murphy<scottmurphy09@gmail.com>
+Maintainer:             Scott Murphy<scottmurphy09@gmail.com>
+License:                BSD3
+License-File:           LICENSE
+-- Synopsis:               
+-- Description:            
+Cabal-Version:          >= 1.2
+Build-Type:             Simple
+
+Library
+  Default-Language:     Haskell2010
+  HS-Source-Dirs:       src
+  GHC-Options:          -Wall
+  Exposed-Modules:      Language.StructuredScript
+                        Language.StructuredScript.Parsers
+  Other-Modules:        Language.StructuredScript.Internal
+  Build-Depends:        base                     >= 4         &&   < 5
+                       ,bytestring               >= 0.9       &&   < 1.0
+                       ,classy-prelude           >= 0.5.6     &&   < 0.5.11
+                       ,network-transport-tcp    >= 0.3       &&   < 0.3.3
+                       ,distributed-process      >= 0.4       &&   < 0.5
+                       ,directory                >= 1.1       &&   < 1.3.0.0
+                       ,system-fileio            >= 0.3.11    &&   < 0.4.0
+                       ,system-filepath          >= 0.4.7     &&   < 0.5.0
+                       ,transformers             >= 0.3.0.0
+                       ,time                     >= 1.4.1     &&   < 1.5
+                       ,old-locale               >= 1.0.0.4   &&   < 1.1
+                       ,parsec                   >= 3.1.3     &&   < 3.1.4
+                       ,process                  >= 1.1       &&   < 1.3
+                       ,mtl                      >= 2.1       &&   < 2.2
+                       ,aeson                    >= 0.6.1.0   &&   < 0.7.1.0
+                       ,HTTP                     >= 4000.2.8  &&   < 4000.3.8
+                       ,hspec                    >= 1.7.2     &&   < 1.7.3
+                       ,http-conduit             >= 1.9.3     &&   < 2.0
+                       ,safe                     >= 0.3.3     &&   < 0.4.3
+                       ,text                     >= 0.11.3.1  &&   < 0.11.3.3
+
+Test-Suite spec
+  Type:                 exitcode-stdio-1.0
+  Default-Language:     Haskell2010
+  Hs-Source-Dirs:       test
+                        ,src    
+  Ghc-Options:          -Wall
+  Main-Is:              Spec.hs
+  Build-Depends:        base
+                      , hspec
+
+
+Executable structured-script-lang
+    main-is:            Main.hs
+    HS-Source-Dirs:     src
+    build-depends:      base
+                                          
+    ghc-options:      -threaded -O2 -rtsopts
+
+Source-Repository head
+  Type:                 git
+--  Location:             

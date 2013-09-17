@@ -1,4 +1,21 @@
-structured-script
-=================
+# structured-script-lang
 
-Structured Script is a scripting language loosely based on Structured Text from the   IEC 61131-3 Structured Text 
+TODO: Write description here Fool
+
+## Installation
+
+TODO: Write installation instructions here
+
+## Usage
+
+TODO: Write usage instructions here
+
+## How to run tests
+
+```
+cabal configure --enable-tests && cabal build && cabal test
+```
+
+## Contributing
+
+TODO: Write contribution instructions here
