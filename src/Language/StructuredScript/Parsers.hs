@@ -15,8 +15,11 @@ import Text.Parsec.Token
 expr  ::= var | const | ( expr ) | unop expr | expr duop expr
 var   ::= letter { letter | digit }*
 const ::= true | false
-unop  ::= ~
+unop  ::= - | ** | NOT
 duop  ::= & | =
+
+
+
 
 
 def = emptyDef { commentStart = "/*",
@@ -37,6 +40,14 @@ def = emptyDef { commentStart = "/*",
 
 
 |-}
+
+
+newtype SSTbool      = SSTbool    Bool    deriving (Show) 
+newtype SSTsint      = SSTsint    Int     deriving (Show) 
+newtype SSTint       = SSTint     Int     deriving (Show) 
+newtype SSTdint      = SSTdint    Int     deriving (Show) 
+newtype SSTreal      = SSTreal    Double  deriving (Show) 
+newtype SSTstring    = SSTstring  Text    deriving (Show) 
 
 
 -- |Symbol definitions 
@@ -63,5 +74,34 @@ def = emptyDef { commentStart = "/*",
                                   ,"WHILE","REPEAT","UNTIL"]
                }
                                   
-
+sstTokenParser :: GenTokenParser Text u Identity
 sstTokenParser = makeTokenParser def
+
+sstWhitespace  :: ParsecT Text u Identity ()
+sstWhitespace  = whiteSpace sstTokenParser
+
+sstLexeme      :: ParsecT Text u Identity () -> ParsecT Text u Identity ()
+sstLexeme      = lexeme     sstTokenParser
+
+sstSymbol      :: String -> ParsecT Text u Identity String
+sstSymbol      = symbol     sstTokenParser
+
+sstNatural     :: ParsecT Text u Identity Integer
+sstNatural     = natural    sstTokenParser
+
+sstParens      :: ParsecT Text u Identity ()-> ParsecT Text u Identity ()
+sstParens      = parens     sstTokenParser
+
+sstSemi        :: ParsecT Text u Identity String
+sstSemi        = semi       sstTokenParser
+
+sstIdentifier  :: ParsecT Text u Identity String
+sstIdentifier  = identifier sstTokenParser
+
+sstReserved    :: String -> ParsecT Text u Identity ()
+sstReserved    = reserved   sstTokenParser
+
+sstReservedop  :: String -> ParsecT Text u Identity ()
+sstReservedop  = reservedOp sstTokenParser
+
+
