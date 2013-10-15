@@ -109,14 +109,21 @@ table :: [[Operator Text u Identity Expr]]
 table = [ [Prefix (sstReservedOp "-" >> return (Uno Not))]]
 
 term :: ParsecT Text () Identity Expr
-term = sstParens exprparser <|>
-       fmap Var sstIdentifier 
+term = sstParens exprparser 
+       <|> fmap Var sstIdentifier 
+       <|> ( (reserved "TRUE") >> return $ Con (ConstBool (SSTbool True)))
+--       <|> ( (reserved "FALSE") >> return $ Con (ConstBool (SSTbool False)))
+
+
+data Expr = Var String |Con Const |Uno Unop Expr 
+            deriving (Show)
+
+
+       
        
 
 
 
-data Expr = Var String |Con Const | Uno Unop Expr 
-            deriving (Show)
 
 
 data Const = ConstBool      SSTbool      
