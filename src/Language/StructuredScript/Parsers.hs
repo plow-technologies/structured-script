@@ -3,24 +3,18 @@ module Language.StructuredScript.Parsers where
 import ClassyPrelude hiding ((<|>))
 import Data.Functor.Identity
 import Text.Parsec 
-import Text.Parsec.Char
-import Text.Parsec.Text
+import Text.Parsec.String
 import Text.Parsec.Expr
 import Text.Parsec.Language
 import Text.Parsec.Token
 
 {-| SST Grammer 
 
-
 expr  ::= var | const | ( expr ) | unop expr | expr duop expr
 var   ::= letter { letter | digit }*
 const ::= true | false
 unop  ::= - | ** | NOT
 duop  ::= & | =
-
-
-
-
 
 def = emptyDef { commentStart = "/*",
                  commentEnd = "*/",
@@ -34,119 +28,102 @@ def = emptyDef { commentStart = "/*",
                  reservedNames = ["VAR","END_VAR","FALSE","TRUE","CONST","END_CONST","IF","THEN",
                                   "BOOL","SINT","INT","DINT","REAL","STRING","CASE","OF","FOR","DO"
                                   ,"WHILE","REPEAT","UNTIL"]
-                                  
-
-
-
-
 |-}
 
 
--- |Symbol definitions 
-startList :: String 
-startList = "*-<>/=&NAXOM:;"
 
-endList :: String
-endList = "*-<>/=&DRT;"
+data Expr = Var String | Con Const | Uno Unop Expr | Duo Duop Expr Expr
+     deriving Show
 
 
+data Const = ConstBool Bool
+           deriving (Show)
+                    
 
-def :: GenLanguageDef Text st Identity
-def = emptyDef { commentStart = "/*",
-                 commentEnd = "*/",
-                 identStart = letter,
-                 identLetter = alphaNum,
-                 nestedComments = False,
-                 caseSensitive = True,
-                 opStart = oneOf startList,
-                 opLetter= oneOf endList,
-                 reservedOpNames = ["**",":=","NOT","~","*","/","MOD","+","-",">=","<=","<",">","=","<>","&","AND","OR","XOR",";"],
-                 reservedNames = ["VAR","END_VAR","FALSE","TRUE","CONST","END_CONST","IF","THEN",
-                                  "BOOL","SINT","INT","DINT","REAL","STRING","CASE","OF","FOR","DO"
-                                  ,"WHILE","REPEAT","UNTIL"]
-               }
-                                  
-sstTokenParser :: GenTokenParser Text u Identity
-sstTokenParser = makeTokenParser def
+                    
+data Unop = Not deriving Show
 
-sstWhitespace  :: ParsecT Text u Identity ()
-sstWhitespace  = whiteSpace sstTokenParser
+data Duop = And | Iff deriving Show
 
-sstLexeme      :: ParsecT Text u Identity () -> ParsecT Text u Identity ()
-sstLexeme      = lexeme     sstTokenParser
-
-sstSymbol      :: String -> ParsecT Text u Identity String
-sstSymbol      = symbol     sstTokenParser
-
-sstNatural     :: ParsecT Text u Identity Integer
-sstNatural     = natural    sstTokenParser
-
-sstInteger  :: ParsecT Text u Identity Integer 
-sstInteger = integer sstTokenParser
+data Stmt = Nop | String := Expr | If Expr Stmt Stmt | While Expr Stmt
+          | Seq [Stmt]
+          deriving Show
 
 
-sstParens      = parens     sstTokenParser
+def :: GenLanguageDef String st Identity
+def = emptyDef{ commentStart = "/*"
+              , commentEnd = "*/"
+              , identStart = letter
+              , identLetter = alphaNum
+              , nestedComments = False
+              , caseSensitive = True                             
+              , opStart = oneOf "~&=:"
+              , opLetter = oneOf "~&=:"
+              , reservedOpNames = ["**",":=","NOT","~","*","/","MOD","+","-",">=","<=","<",">","=","<>","&","AND","OR","XOR",";"]
+              , reservedNames = ["true", "false", "nop",
+                                 "if", "then", "else", "fi",
+                                 "while", "do", "od"] }
 
-sstSemi        :: ParsecT Text u Identity String
-sstSemi        = semi       sstTokenParser
-
-sstIdentifier  :: ParsecT Text u Identity String
-sstIdentifier  = identifier sstTokenParser
-
-sstReserved    :: String -> ParsecT Text u Identity ()
-sstReserved    = reserved   sstTokenParser
-
-sstReservedOp  :: String -> ParsecT Text u Identity ()
-sstReservedOp  = reservedOp sstTokenParser
-
-
+TokenParser { parens     = m_parens
+            , identifier = m_identifier
+            , reservedOp = m_reservedOp
+            , reserved   = m_reserved
+            , semiSep1   = m_semiSep1
+            , whiteSpace = m_whiteSpace } = makeTokenParser def
 
 exprparser :: Parser Expr
 exprparser = buildExpressionParser table term <?> "expression"
 
-
-table :: [[Operator Text u Identity Expr]]
-table = [ [Prefix (sstReservedOp "-" >> return (Uno Not))]]
-
-term :: ParsecT Text () Identity Expr
-term = sstParens exprparser 
-       <|> fmap Var sstIdentifier 
-       <|> ( (reserved "TRUE") >> return $ Con (ConstBool (SSTbool True)))
---       <|> ( (reserved "FALSE") >> return $ Con (ConstBool (SSTbool False)))
-
-
-data Expr = Var String |Con Const |Uno Unop Expr 
-            deriving (Show)
+table = [ [Prefix (m_reservedOp "~" >> return (Uno Not))]
+        , [Infix (m_reservedOp "&" >> return (Duo And)) AssocLeft]
+        , [Infix (m_reservedOp "=" >> return (Duo Iff)) AssocLeft]
+        ]
+        
+term = m_parens exprparser
+       <|> fmap Var m_identifier
+       <|> (m_reserved "true" >> return (Con (ConstBool True)))
+       <|> (m_reserved "false" >> return (Con (ConstBool False)))
 
 
-       
-       
-
-
-
-
-
-data Const = ConstBool      SSTbool      
-           | ConstSint      SSTsint      
-           | ConstInt       SSTint       
-           | ConstDint      SSTdint      
-           | ConstReal      SSTreal      
-           | ConstString    SSTstring    
-             deriving (Show)
-
-data Unop = Not deriving (Show)
-
-newtype SSTbool      = SSTbool    Bool    deriving (Show) 
-newtype SSTsint      = SSTsint    Integer     deriving (Show) 
-newtype SSTint       = SSTint     Integer     deriving (Show) 
-newtype SSTdint      = SSTdint    Integer     deriving (Show) 
-newtype SSTreal      = SSTreal    Double  deriving (Show) 
-newtype SSTstring    = SSTstring  Text    deriving (Show) 
-
-
+mainparser :: Parser Stmt
+mainparser = m_whiteSpace >> stmtparser <* eof
+    where
+      stmtparser :: Parser Stmt
+      stmtparser = fmap Seq (m_semiSep1 stmt1)
+      stmt1 = (m_reserved "nop" >> return Nop)
+              <|> do { v <- m_identifier
+                     ; m_reservedOp ":="
+                     ; e <- exprparser
+                     ; return (v := e)
+                     }
+              <|> do { m_reserved "if"
+                     ; b <- exprparser
+                     ; m_reserved "then"
+                     ; p <- stmtparser
+                     ; m_reserved "else"
+                     ; q <- stmtparser
+                     ; m_reserved "fi"
+                     ; return (If b p q)
+                     }
+              <|> do { m_reserved "while"
+                     ; b <- exprparser
+                     ; m_reserved "do"
+                     ; p <- stmtparser
+                     ; m_reserved "od"
+                     ; return (While b p)
+                     }
 
 
 
 
 
 
+
+
+play :: String -> IO ()
+play inp = case parse mainparser "" inp of
+              { Left err -> print err
+              ; Right ans -> print ans
+              }
+                 
+                  
