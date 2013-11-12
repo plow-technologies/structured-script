@@ -1,3 +1,0 @@
-{-# LANGUAGE NoImplicitPrelude,OverloadedStrings #-}
-module Language.StructuredScript.Parsers where
-import ClassyPrelude
