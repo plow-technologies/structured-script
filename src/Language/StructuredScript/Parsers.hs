@@ -23,7 +23,11 @@ data Expr = Var String | Con Const | Uno Unop Expr | Duo Duop Expr Expr
      deriving Show
 
 
-data Const = ConstBool Bool | ConstInteger Integer | ConstString String | ConstChar Char
+data Const = ConstBool Bool 
+           | ConstInteger Integer 
+           | ConstString String 
+           | ConstChar Char
+           | ConstDouble Double
            deriving (Show)
                     
 
@@ -91,6 +95,10 @@ sst_octal       =       octal        sst_lexer
 sst_hexadecimal ::  ParsecT String u Identity Integer
 sst_hexadecimal =       hexadecimal  sst_lexer 
 
+sst_double :: ParsecT String u Identity Double 
+sst_double = float sst_lexer
+
+
 -- | String Literal 
 sst_stringLiteral :: ParsecT String u Identity String 
 sst_stringLiteral = stringLiteral sst_lexer
@@ -115,6 +123,7 @@ term = sst_parens exprparser
        <|> fmap Var sst_identifier
        <|> boolTParser
        <|> boolFParser
+       <|> doubleParser
        <|> intParser
        <|> stringParser
 
@@ -132,11 +141,16 @@ intParser = (sst_natural >>= (\x -> return (Con (ConstInteger x))))
             <|> (sst_hexadecimal >>= (\x -> return (Con (ConstInteger x))))
             <|> (sst_octal >>= (\x -> return (Con (ConstInteger x))))
 
+doubleParser :: ParsecT String u Identity Expr 
+doubleParser = (sst_double >>= (\x -> return (Con (ConstDouble x))))
+
 stringParser :: ParsecT String u Identity Expr
 stringParser = (sst_stringLiteral >>= (\x -> return (Con (ConstString x))))
 
 charParser :: ParsecT String u Identity Expr
 charParser = (sst_charLiteral >>= (\x -> return ( Con (ConstChar x ))))
+
+
 
 mainparser :: Parser Stmt
 mainparser = sst_whiteSpace >> stmtparser <* eof
