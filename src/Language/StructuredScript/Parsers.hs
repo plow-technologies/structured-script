@@ -40,6 +40,7 @@ data Stmt = Nop | String := Expr | If Expr Stmt Stmt | While Expr Stmt
           | Seq [Stmt]
           deriving Show
 
+opChar = oneOf "=<>@^|&+-*/$%!?~.:"
 
 def :: GenLanguageDef String st Identity
 def = emptyDef{ commentStart = "/*"
@@ -48,8 +49,8 @@ def = emptyDef{ commentStart = "/*"
               , identLetter = alphaNum
               , nestedComments = False
               , caseSensitive = True                             
-              , opStart = oneOf "~&=:"
-              , opLetter = oneOf "~&=:"
+              , opStart = opChar
+              , opLetter = opChar
               , reservedOpNames = ["**",":=","NOT","~","*","/","MOD","+","-",">=","<=","<",">","=","<>","&","AND","OR","XOR",";"]
               , reservedNames = ["true", "false", "nop",
                                  "if", "then", "else", "fi",
