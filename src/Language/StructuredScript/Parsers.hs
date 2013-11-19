@@ -34,13 +34,15 @@ data Const = ConstBool Bool
                     
 data Unop = Not deriving Show
 
-data Duop = And | Iff deriving Show
+data Duop = And | Or | Xor | Iff 
+           | Add | Mul | Div | Sub | Mod 
+           | Greater | Less | Equal 
+           deriving Show
 
 data Stmt = Nop | String := Expr | If Expr Stmt Stmt | While Expr Stmt
           | Seq [Stmt]
           deriving Show
 
-opChar = oneOf "=<>@^|&+-*/$%!?~.:"
 
 def :: GenLanguageDef String st Identity
 def = emptyDef{ commentStart = "/*"
@@ -49,8 +51,8 @@ def = emptyDef{ commentStart = "/*"
               , identLetter = alphaNum
               , nestedComments = False
               , caseSensitive = True                             
-              , opStart = opChar
-              , opLetter = opChar
+              , opStart = oneOf "=<>@^|&+-*/$MOD!?~.:"
+              , opLetter = oneOf "=<>@^|&+-*/$MOD!?~.:"
               , reservedOpNames = ["**",":=","NOT","~","*","/","MOD","+","-",">=","<=","<",">","=","<>","&","AND","OR","XOR",";"]
               , reservedNames = ["true", "false", "nop",
                                  "if", "then", "else", "fi",
@@ -116,7 +118,14 @@ exprparser = buildExpressionParser table term <?> "expression"
 table :: [[Operator String u Identity Expr]]
 table = [ [Prefix (sst_reservedOp "~" >> return (Uno Not))]
         , [Infix (sst_reservedOp "&" >> return (Duo And)) AssocLeft]
+        , [Infix (sst_reservedOp "|" >> return (Duo Or)) AssocLeft]
         , [Infix (sst_reservedOp "=" >> return (Duo Iff)) AssocLeft]
+        , [Infix (sst_reservedOp "+" >> return (Duo Add)) AssocLeft]
+        , [Infix (sst_reservedOp "-" >> return (Duo Sub)) AssocLeft]
+        , [Infix (sst_reservedOp "*" >> return (Duo Mul)) AssocLeft]
+        , [Infix (sst_reservedOp "MOD" >> return (Duo Mod)) AssocLeft]
+        , [Infix (sst_reservedOp ">" >> return (Duo Greater)) AssocLeft]
+        , [Infix (sst_reservedOp "<" >> return (Duo Less)) AssocLeft]
         ]
 
 term :: ParsecT String () Identity Expr        
@@ -124,8 +133,8 @@ term = sst_parens exprparser
        <|> fmap Var sst_identifier
        <|> boolTParser
        <|> boolFParser
-       <|> doubleParser
        <|> intParser
+       <|> doubleParser
        <|> stringParser
 
 boolTParser :: ParsecT String t Identity Expr
