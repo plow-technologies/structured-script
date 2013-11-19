@@ -7,6 +7,7 @@ import Text.Parsec.String
 import Text.Parsec.Expr
 import Text.Parsec.Language
 import Text.Parsec.Token
+--import Data.Either
 
 {-| SST Grammer 
 
@@ -34,7 +35,10 @@ data Const = ConstBool Bool
                     
 data Unop = Not deriving Show
 
-data Duop = And | Iff deriving Show
+data Duop = And | Or | Xor | Iff 
+           | Add | Mul | Div | Sub | Mod 
+           | Greater | Less | Equal 
+           deriving Show
 
 data Stmt = Nop | String := Expr | If Expr Stmt Stmt | While Expr Stmt
           | Seq [Stmt]
@@ -48,8 +52,8 @@ def = emptyDef{ commentStart = "/*"
               , identLetter = alphaNum
               , nestedComments = False
               , caseSensitive = True                             
-              , opStart = oneOf "~&=:"
-              , opLetter = oneOf "~&=:"
+              , opStart = oneOf "=<>@^|&+-*/$MOD!?~.:"
+              , opLetter = oneOf "=<>@^|&+-*/$MOD!?~.:"
               , reservedOpNames = ["**",":=","NOT","~","*","/","MOD","+","-",">=","<=","<",">","=","<>","&","AND","OR","XOR",";"]
               , reservedNames = ["true", "false", "nop",
                                  "if", "then", "else", "fi",
@@ -98,6 +102,8 @@ sst_hexadecimal =       hexadecimal  sst_lexer
 sst_double :: ParsecT String u Identity Double 
 sst_double = float sst_lexer
 
+sst_naturalOrDouble :: ParsecT String u Identity (Either Integer Double)
+sst_naturalOrDouble = naturalOrFloat sst_lexer
 
 -- | String Literal 
 sst_stringLiteral :: ParsecT String u Identity String 
@@ -115,7 +121,14 @@ exprparser = buildExpressionParser table term <?> "expression"
 table :: [[Operator String u Identity Expr]]
 table = [ [Prefix (sst_reservedOp "~" >> return (Uno Not))]
         , [Infix (sst_reservedOp "&" >> return (Duo And)) AssocLeft]
+        , [Infix (sst_reservedOp "|" >> return (Duo Or)) AssocLeft]
         , [Infix (sst_reservedOp "=" >> return (Duo Iff)) AssocLeft]
+        , [Infix (sst_reservedOp "+" >> return (Duo Add)) AssocLeft]
+        , [Infix (sst_reservedOp "-" >> return (Duo Sub)) AssocLeft]
+        , [Infix (sst_reservedOp "*" >> return (Duo Mul)) AssocLeft]
+        , [Infix (sst_reservedOp "MOD" >> return (Duo Mod)) AssocLeft]
+        , [Infix (sst_reservedOp ">" >> return (Duo Greater)) AssocLeft]
+        , [Infix (sst_reservedOp "<" >> return (Duo Less)) AssocLeft]
         ]
 
 term :: ParsecT String () Identity Expr        
@@ -123,8 +136,9 @@ term = sst_parens exprparser
        <|> fmap Var sst_identifier
        <|> boolTParser
        <|> boolFParser
-       <|> doubleParser
-       <|> intParser
+      -- <|> intParser
+      -- <|> doubleParser
+       <|>naturalOrDoubleParser
        <|> stringParser
 
 boolTParser :: ParsecT String t Identity Expr
@@ -143,6 +157,13 @@ intParser = (sst_natural >>= (\x -> return (Con (ConstInteger x))))
 
 doubleParser :: ParsecT String u Identity Expr 
 doubleParser = (sst_double >>= (\x -> return (Con (ConstDouble x))))
+
+naturalOrDoubleParser :: ParsecT String  u Identity Expr
+naturalOrDoubleParser = (sst_naturalOrDouble >>= (\x ->return $ makeNum x))
+                        where makeNum = either makeConstInt makeConstDouble
+                              makeConstInt = (Con).(ConstInteger)
+                              makeConstDouble = (Con).(ConstDouble)
+
 
 stringParser :: ParsecT String u Identity Expr
 stringParser = (sst_stringLiteral >>= (\x -> return (Con (ConstString x))))
