@@ -7,6 +7,7 @@ import Text.Parsec.String
 import Text.Parsec.Expr
 import Text.Parsec.Language
 import Text.Parsec.Token
+--import Data.Either
 
 {-| SST Grammer 
 
@@ -101,6 +102,8 @@ sst_hexadecimal =       hexadecimal  sst_lexer
 sst_double :: ParsecT String u Identity Double 
 sst_double = float sst_lexer
 
+sst_naturalOrDouble :: ParsecT String u Identity (Either Integer Double)
+sst_naturalOrDouble = naturalOrFloat sst_lexer
 
 -- | String Literal 
 sst_stringLiteral :: ParsecT String u Identity String 
@@ -133,8 +136,9 @@ term = sst_parens exprparser
        <|> fmap Var sst_identifier
        <|> boolTParser
        <|> boolFParser
-       <|> intParser
-       <|> doubleParser
+      -- <|> intParser
+      -- <|> doubleParser
+       <|>naturalOrDoubleParser
        <|> stringParser
 
 boolTParser :: ParsecT String t Identity Expr
@@ -153,6 +157,13 @@ intParser = (sst_natural >>= (\x -> return (Con (ConstInteger x))))
 
 doubleParser :: ParsecT String u Identity Expr 
 doubleParser = (sst_double >>= (\x -> return (Con (ConstDouble x))))
+
+naturalOrDoubleParser :: ParsecT String  u Identity Expr
+naturalOrDoubleParser = (sst_naturalOrDouble >>= (\x ->return $ makeNum x))
+                        where makeNum = either makeConstInt makeConstDouble
+                              makeConstInt = (Con).(ConstInteger)
+                              makeConstDouble = (Con).(ConstDouble)
+
 
 stringParser :: ParsecT String u Identity Expr
 stringParser = (sst_stringLiteral >>= (\x -> return (Con (ConstString x))))
