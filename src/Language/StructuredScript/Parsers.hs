@@ -7,6 +7,7 @@ import Text.Parsec.String
 import Text.Parsec.Expr
 import Text.Parsec.Language
 import Text.Parsec.Token
+import Control.Applicative((<*>),(<$>))
 --import Data.Either
 
 {-| SST Grammer 
@@ -20,8 +21,33 @@ x := true;
 
 
 
+
 data Expr = Var String | Con Const | Uno Unop Expr | Duo Duop Expr Expr
      deriving Show
+
+testStmtList = Seq ["x" := Duo Add (Con (ConstInteger 5)) (Con (ConstInteger 5))];
+testStmt = "x" := Duo Add (Con (ConstInteger 5)) (Con (ConstInteger 5));
+testExpr = Duo Add (Con (ConstInteger 5)) (Con (ConstInteger 5));
+
+evalExpr :: Expr -> Either String Const
+evalExpr (Con x) = Right x
+
+evalExpr (Duo op e1 e2) = do 
+    e1' <-   evalExpr e1
+    e2' <-   evalExpr e2
+    duopLookUp op  e1' e2'
+
+duopLookUp :: Duop -> Const -> Const -> Either String Const
+duopLookUp (Add) (ConstBool _ ) _ = Left "Expected Double or Integer, received Bool First Argument"
+duopLookUp (Add) (ConstString _) _ = Left "Expected Double or Integer, received String First Argument"
+duopLookUp (Add) (ConstChar _) _ = Left "Expected Double or Integer, received Char First Argument"
+duopLookUp (Add) (ConstInteger i) (ConstInteger j) = Right $ ConstInteger $ i + j
+duopLookUp (Add) (ConstInteger i) (ConstDouble d) = Right $ ConstDouble $ (fromIntegral i) + d
+duopLookUp (Add) (ConstDouble d1) (ConstDouble d2) = Right $ ConstDouble $ d1 + d2
+duopLookUp (Add) (ConstDouble d) (ConstInteger i) = Right $ ConstDouble $ d + (fromIntegral i)
+duopLookUp (Add) (_) (ConstBool _) = Left "Expected Double or Integer, received Bool Second Argument"
+duopLookUp (Add) (_) (ConstString _) = Left "Expected Double or Integer, received String Second Argument"
+duopLookUp (Add) (_) (ConstChar _) = Left "Expected Double or Integer, received Char Second Argument"
 
 
 data Const = ConstBool Bool 
@@ -29,7 +55,7 @@ data Const = ConstBool Bool
            | ConstString String 
            | ConstChar Char
            | ConstDouble Double
-           deriving (Show)
+           deriving (Show, Eq)
                     
 
                     
@@ -136,10 +162,11 @@ term = sst_parens exprparser
        <|> fmap Var sst_identifier
        <|> boolTParser
        <|> boolFParser
-      -- <|> intParser
-      -- <|> doubleParser
        <|>naturalOrDoubleParser
        <|> stringParser
+      -- <|> intParser
+      -- <|> doubleParser
+
 
 boolTParser :: ParsecT String t Identity Expr
 boolTParser = (sst_reserved "true" >> return (Con (ConstBool True)))
@@ -155,8 +182,8 @@ intParser = (sst_natural >>= (\x -> return (Con (ConstInteger x))))
             <|> (sst_hexadecimal >>= (\x -> return (Con (ConstInteger x))))
             <|> (sst_octal >>= (\x -> return (Con (ConstInteger x))))
 
-doubleParser :: ParsecT String u Identity Expr 
-doubleParser = (sst_double >>= (\x -> return (Con (ConstDouble x))))
+--doubleParser :: ParsecT String u Identity Expr 
+--doubleParser = (sst_double >>= (\x -> return (Con (ConstDouble x))))
 
 naturalOrDoubleParser :: ParsecT String  u Identity Expr
 naturalOrDoubleParser = (sst_naturalOrDouble >>= (\x ->return $ makeNum x))
@@ -214,4 +241,3 @@ play inp = case parse mainparser "" inp of
               ; Right ans -> print ans
               }
                  
-                  
