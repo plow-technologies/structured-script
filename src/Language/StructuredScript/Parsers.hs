@@ -20,14 +20,13 @@ x := true;
 |-}
 
 
-
-
 data Expr = Var String | Con Const | Uno Unop Expr | Duo Duop Expr Expr
      deriving Show
 
 testStmtList = Seq ["x" := Duo Add (Con (ConstInteger 5)) (Con (ConstInteger 5))];
 testStmt = "x" := Duo Add (Con (ConstInteger 5)) (Con (ConstInteger 5));
 testExpr = Duo Add (Con (ConstInteger 5)) (Con (ConstInteger 5));
+testExpr2 = Duo Add (Con (ConstDouble 5.5)) (Con (ConstDouble 4.3));
 
 evalExpr :: Expr -> Either String Const
 evalExpr (Con x) = Right x
