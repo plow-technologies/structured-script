@@ -65,7 +65,7 @@ data Duop = And | Or | Xor | Iff
            | Greater | Less | Equal 
            deriving Show
 
-data Stmt = Nop | String := Expr | If Expr Stmt Stmt | While Expr Stmt
+data Stmt = Nop | External | Global |String := Expr | If Expr Stmt Stmt 
           | Seq [Stmt]
           deriving Show
 
@@ -81,8 +81,8 @@ def = emptyDef{ commentStart = "/*"
               , opLetter = oneOf "=<>@^|&+-*/$MOD!?~.:"
               , reservedOpNames = ["**",":=","NOT","~","*","/","MOD","+","-",">=","<=","<",">","=","<>","&","AND","OR","XOR",";"]
               , reservedNames = ["true", "false", "nop",
-                                 "if", "then", "else", "fi",
-                                 "while", "do", "od"] }
+                                 "if", "then", "else", "end_if"
+                                  ] }
 
 
 -- | Create specific parsers from the generic parser creator in Parsec
@@ -216,15 +216,8 @@ mainparser = sst_whiteSpace >> stmtparser <* eof
                      ; p <- stmtparser
                      ; sst_reserved "else"
                      ; q <- stmtparser
-                     ; sst_reserved "fi"
+                     ; sst_reserved "end_if"
                      ; return (If b p q)
-                     }
-              <|> do { sst_reserved "while"
-                     ; b <- exprparser
-                     ; sst_reserved "do"
-                     ; p <- stmtparser
-                     ; sst_reserved "od"
-                     ; return (While b p)
                      }
               <|> return Nop
 
