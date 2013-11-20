@@ -20,8 +20,8 @@ x := true;
 |-}
 
 
-data Expr = Var String | Con Const | Uno Unop Expr | Duo Duop Expr Expr
-     deriving Show
+data Expr = Var String | Con Const | Uno Unop Expr | Duo Duop Expr Expr 
+    deriving Show
 
 testStmtList = Seq ["x" := Duo Add (Con (ConstInteger 5)) (Con (ConstInteger 5))];
 testStmt = "x" := Duo Add (Con (ConstInteger 5)) (Con (ConstInteger 5));
@@ -226,12 +226,11 @@ mainparser = sst_whiteSpace >> stmtparser <* eof
                      ; sst_reserved "od"
                      ; return (While b p)
                      }
+              <|> return Nop
 
 
 
-
-
-
+testString = "if (true) then y:= 5;else = 6;nop"
 
 
 play :: String -> IO ()
