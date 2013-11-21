@@ -10,7 +10,6 @@ import Text.Parsec.Token
 import Control.Applicative((<*>),(<$>))
 import Data.HashMap.Lazy hiding (foldl')
 import Data.List (foldl')
---import Data.Either
 
 
 {-| SST Grammer 
@@ -30,7 +29,6 @@ type VType = Const
 emptyVTable = VT empty 
 
 newtype VarTable = VT (HashMap Text VType) deriving (Show, Eq) 
-
 
 testStmtList = Seq ["x" := Duo Add (Con (ConstInteger 5)) (Con (ConstInteger 5))];
 testStmt = "x" := Duo Add (Con (ConstInteger 5)) (Con (ConstInteger 5));
@@ -60,7 +58,6 @@ evalStmt v st@ (s := e) = insertToLut v st
 evalStmt _ _ = Left "Not Impremented"
 
  
-
 duopLookUp :: Duop -> Const -> Const -> Either String Const
 duopLookUp (Add) (ConstBool _ ) _ = Left "Expected Double or Integer, received Bool First Argument"
 duopLookUp (Add) (ConstString _) _ = Left "Expected Double or Integer, received String First Argument"
@@ -81,8 +78,7 @@ data Const = ConstBool Bool
            | ConstDouble Double
            deriving (Show, Eq, Ord)
                     
-
-                    
+                   
 data Unop = Not deriving Show
 
 data Duop = And | Or | Xor | Iff 
@@ -101,7 +97,6 @@ insertToLut v@ (VT vt) (s := e) =  case evalExpr v e of
 insertToLut vt ( _ ) = Left "Received other error in insertToLut"
 
 
-
 def :: GenLanguageDef String st Identity
 def = emptyDef{ commentStart = "/*"
               , commentEnd = "*/"
@@ -115,7 +110,6 @@ def = emptyDef{ commentStart = "/*"
               , reservedNames = ["true", "false", "nop",
                                  "if", "then", "else", "end_if"
                                   ] }
-
 
 -- | Create specific parsers from the generic parser creator in Parsec
 sst_lexer :: GenTokenParser String u Identity
@@ -132,7 +126,6 @@ sst_reservedOp  =  reservedOp   sst_lexer
 
 sst_reserved :: String -> ParsecT String u Identity ()
 sst_reserved = reserved     sst_lexer 
-
 
 
 sst_semiSep1 :: ParsecT String u Identity a -> ParsecT String u Identity [a]
