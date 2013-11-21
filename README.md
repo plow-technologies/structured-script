@@ -36,11 +36,23 @@ Boolean operators take Data Types and return whether one value of the data type 
 + *<=*
 + *+*
 + *-*
++ */*
 + *\**
 
 
 ### Bitwise ###
-*TODO: Add Bitwise*
++ *&* Bitwise And
++ *OR* Bitwise Or
++ *XOR* Bitwise exclusive Or
++ *NOT* Bitwise negation
+
+
+##Functions##
+(*Functions in Italics are not implemented yet*)
+### Bitwise ###
++ *isSet* checks a bit in position N of an INT, returns true if that bit is set
+  * ```isSet 0 4;``` returns **False** ```isSet 3;``` returns **True**
++ *shiftN*
 
 
 
