@@ -55,8 +55,20 @@ evalStmt v@ (VT vt) (Seq lst) =  foldl' (\a b -> loop a b) (Right v) lst
                                 
 evalStmt v st@ (s := e) = insertToLut v st 
 
+evalStmt v@ (VT vt) (If e s1 s2) = case evalExpr v e of 
+                                (Right (ConstBool True)) -> evalStmt v s1 
+                                (Right (ConstBool False)) -> evalStmt v s2
+                                (Right x) -> Left $ (show x) ++ " not a well formed bool"
+                                (Left x) -> Left $ x ++ " not a well formed bool"
+evalStmt v (Nop) = Right v 
+
 evalStmt _ _ = Left "Not Impremented"
 
+insertToLut :: VarTable -> Stmt -> Either String VarTable 
+insertToLut v@ (VT vt) (s := e) =  case evalExpr v e of 
+                                Left s -> Left $ s ++ "In insertToLut"
+                                Right c -> Right $ VT $ insert (pack s) c vt
+insertToLut vt ( _ ) = Left "Received other error in insertToLut"
  
 duopLookUp :: Duop -> Const -> Const -> Either String Const
 duopLookUp (Add) (ConstBool _ ) _ = Left "Expected Double or Integer, received Bool First Argument"
@@ -69,6 +81,49 @@ duopLookUp (Add) (ConstDouble d) (ConstInteger i) = Right $ ConstDouble $ d + (f
 duopLookUp (Add) (_) (ConstBool _) = Left "Expected Double or Integer, received Bool Second Argument"
 duopLookUp (Add) (_) (ConstString _) = Left "Expected Double or Integer, received String Second Argument"
 duopLookUp (Add) (_) (ConstChar _) = Left "Expected Double or Integer, received Char Second Argument"
+
+-- Subtraction
+duopLookUp (Sub) (ConstBool _ ) _ = Left "Expected Double or Integer, received Bool First Argument"
+duopLookUp (Sub) (ConstString _) _ = Left "Expected Double or Integer, received String First Argument"
+duopLookUp (Sub) (ConstChar _) _ = Left "Expected Double or Integer, received Char First Argument"
+duopLookUp (Sub) (ConstInteger i) (ConstInteger j) = Right $ ConstInteger $ i - j
+duopLookUp (Sub) (ConstInteger i) (ConstDouble d) = Right $ ConstDouble $ (fromIntegral i) - d
+duopLookUp (Sub) (ConstDouble d1) (ConstDouble d2) = Right $ ConstDouble $ d1 - d2
+duopLookUp (Sub) (ConstDouble d) (ConstInteger i) = Right $ ConstDouble $ d - (fromIntegral i)
+duopLookUp (Sub) (_) (ConstBool _) = Left "Expected Double or Integer, received Bool Second Argument"
+duopLookUp (Sub) (_) (ConstString _) = Left "Expected Double or Integer, received String Second Argument"
+duopLookUp (Sub) (_) (ConstChar _) = Left "Expected Double or Integer, received Char Second Argument"
+
+-- Multiplication
+duopLookUp (Mul) (ConstBool _ ) _ = Left "Expected Double or Integer, received Bool First Argument"
+duopLookUp (Mul) (ConstString _) _ = Left "Expected Double or Integer, received String First Argument"
+duopLookUp (Mul) (ConstChar _) _ = Left "Expected Double or Integer, received Char First Argument"
+duopLookUp (Mul) (ConstInteger i) (ConstInteger j) = Right $ ConstInteger $ i * j
+duopLookUp (Mul) (ConstInteger i) (ConstDouble d) = Right $ ConstDouble $ (fromIntegral i) * d
+duopLookUp (Mul) (ConstDouble d1) (ConstDouble d2) = Right $ ConstDouble $ d1 * d2
+duopLookUp (Mul) (ConstDouble d) (ConstInteger i) = Right $ ConstDouble $ d * (fromIntegral i)
+duopLookUp (Mul) (_) (ConstBool _) = Left "Expected Double or Integer, received Bool Second Argument"
+duopLookUp (Mul) (_) (ConstString _) = Left "Expected Double or Integer, received String Second Argument"
+duopLookUp (Mul) (_) (ConstChar _) = Left "Expected Double or Integer, received Char Second Argument"
+
+-- Division
+duopLookUp (Div) (ConstBool _ ) _ = Left "Expected Double or Integer, received Bool First Argument"
+duopLookUp (Div) (ConstString _) _ = Left "Expected Double or Integer, received String First Argument"
+duopLookUp (Div) (ConstChar _) _ = Left "Expected Double or Integer, received Char First Argument"
+--duopLookUp (Div) (ConstInteger i) (ConstInteger j) = Right $ ConstInteger $ i / j
+duopLookUp (Div) (ConstInteger i) (ConstDouble d) = Right $ ConstDouble $ (fromIntegral i) / d
+duopLookUp (Div) (ConstDouble d1) (ConstDouble d2) = Right $ ConstDouble $ d1 / d2
+duopLookUp (Div) (ConstDouble d) (ConstInteger i) = Right $ ConstDouble $ d / (fromIntegral i)
+duopLookUp (Div) (_) (ConstBool _) = Left "Expected Double or Integer, received Bool Second Argument"
+duopLookUp (Div) (_) (ConstString _) = Left "Expected Double or Integer, received String Second Argument"
+duopLookUp (Div) (_) (ConstChar _) = Left "Expected Double or Integer, received Char Second Argument"
+
+
+
+-- testing for equality
+duopLookUp (Equal) x y = Right $ ConstBool $ x == y
+duopLookUp (Greater) x y = Right $ ConstBool $ x > y
+duopLookUp (Less) x y = Right $ ConstBool $ x < y
 
 
 data Const = ConstBool Bool 
@@ -90,22 +145,16 @@ data Stmt = Nop | External | Global |String := Expr | If Expr Stmt Stmt
           | Seq [Stmt]
           deriving Show
 
-insertToLut :: VarTable -> Stmt -> Either String VarTable 
-insertToLut v@ (VT vt) (s := e) =  case evalExpr v e of 
-                                Left s -> Left $ s ++ "In insertToLut"
-                                Right c -> Right $ VT $ insert (pack s) c vt
-insertToLut vt ( _ ) = Left "Received other error in insertToLut"
-
 
 def :: GenLanguageDef String st Identity
 def = emptyDef{ commentStart = "/*"
               , commentEnd = "*/"
               , identStart = letter
-              , identLetter = alphaNum
+              , identLetter = alphaNum <|> char '_'
               , nestedComments = False
               , caseSensitive = True                             
-              , opStart = oneOf "=<>@^|&+-*/$MOD!?~.:"
-              , opLetter = oneOf "=<>@^|&+-*/$MOD!?~.:"
+              , opStart = oneOf "==<>@^|&+-*/$MOD!?~.:"
+              , opLetter = oneOf "==<>@^|&+-*/$MOD!?~.:"
               , reservedOpNames = ["**",":=","NOT","~","*","/","MOD","+","-",">=","<=","<",">","=","<>","&","AND","OR","XOR",";"]
               , reservedNames = ["true", "false", "nop",
                                  "if", "then", "else", "end_if"
@@ -162,6 +211,7 @@ sst_stringLiteral = stringLiteral sst_lexer
 sst_charLiteral :: ParsecT String u Identity Char
 sst_charLiteral = charLiteral sst_lexer
 
+
 sst_whiteSpace :: ParsecT String u Identity ()
 sst_whiteSpace  =  whiteSpace   sst_lexer   
 
@@ -172,10 +222,11 @@ table :: [[Operator String u Identity Expr]]
 table = [ [Prefix (sst_reservedOp "~" >> return (Uno Not))]
         , [Infix (sst_reservedOp "&" >> return (Duo And)) AssocLeft]
         , [Infix (sst_reservedOp "|" >> return (Duo Or)) AssocLeft]
-        , [Infix (sst_reservedOp "=" >> return (Duo Iff)) AssocLeft]
+        , [Infix (sst_reservedOp "==" >> return (Duo Equal)) AssocLeft]
         , [Infix (sst_reservedOp "+" >> return (Duo Add)) AssocLeft]
         , [Infix (sst_reservedOp "-" >> return (Duo Sub)) AssocLeft]
         , [Infix (sst_reservedOp "*" >> return (Duo Mul)) AssocLeft]
+        , [Infix (sst_reservedOp "/" >> return (Duo Div)) AssocLeft]
         , [Infix (sst_reservedOp "MOD" >> return (Duo Mod)) AssocLeft]
         , [Infix (sst_reservedOp ">" >> return (Duo Greater)) AssocLeft]
         , [Infix (sst_reservedOp "<" >> return (Duo Less)) AssocLeft]
@@ -248,7 +299,8 @@ mainparser = sst_whiteSpace >> stmtparser <* eof
 
 
 
-testString = "x:=7; y:=8; z:= y + x; output := x"
+testString = "x:=16.0; y:=16; if (x == y) then z:= y*x; else z:= y;end_if/*; x:=y */"
+
 
 
 play :: String -> IO ()
