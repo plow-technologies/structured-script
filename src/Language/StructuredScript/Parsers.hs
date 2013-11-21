@@ -69,9 +69,15 @@ insertToLut v@ (VT vt) (s := e) =  case evalExpr v e of
                                 Left s -> Left $ s ++ "In insertToLut"
                                 Right c -> Right $ VT $ insert (pack s) c vt
 insertToLut vt ( _ ) = Left "Received other error in insertToLut"
- 
+
+-- Unary Operator lookup function
+unopLookUp :: Unop -> Const -> Either String Const
+unopLookUp (Not) (ConstBool b) = Right $ ConstBool $ not b
+unopLookUp (Not) (_) = Left "The expected variable or expression is not boolean"
+
+-- Binary Operator lookup function
 duopLookUp :: Duop -> Const -> Const -> Either String Const
-duopLookUp (Add)  (ConstBool _ ) _ = Left "Expected Double or Integer, received Bool First Argument"
+duopLookUp (Add) (ConstBool _ ) _ = Left "Expected Double or Integer, received Bool First Argument"
 duopLookUp (Add) (ConstString _) _ = Left "Expected Double or Integer, received String First Argument"
 duopLookUp (Add) (ConstChar _) _ = Left "Expected Double or Integer, received Char First Argument"
 duopLookUp (Add) (ConstInteger i) (ConstInteger j) = Right $ ConstInteger $ i + j
@@ -203,7 +209,6 @@ duopLookUp (XOr) (ConstBool b1) (ConstBool b2) = Right $ ConstBool $ not (b1 || 
 -- duopLookUp (Or) (ConstChar c1) (ConstChar c2) = Right $ ConstBool $ not (c1 || c2)
 -- duopLookUp (Or) (ConstInteger i1) (ConstInteger i2) = Right $ ConstBool $ not (i1 || i2)
 duopLookUp (XOr) (_) (_) = Left "The two variables or expressions are not comparable"
-
 
 
 
