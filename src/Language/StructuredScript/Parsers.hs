@@ -82,9 +82,48 @@ duopLookUp (Add) (_) (ConstBool _) = Left "Expected Double or Integer, received 
 duopLookUp (Add) (_) (ConstString _) = Left "Expected Double or Integer, received String Second Argument"
 duopLookUp (Add) (_) (ConstChar _) = Left "Expected Double or Integer, received Char Second Argument"
 
+-- Subtraction
+duopLookUp (Sub) (ConstBool _ ) _ = Left "Expected Double or Integer, received Bool First Argument"
+duopLookUp (Sub) (ConstString _) _ = Left "Expected Double or Integer, received String First Argument"
+duopLookUp (Sub) (ConstChar _) _ = Left "Expected Double or Integer, received Char First Argument"
+duopLookUp (Sub) (ConstInteger i) (ConstInteger j) = Right $ ConstInteger $ i - j
+duopLookUp (Sub) (ConstInteger i) (ConstDouble d) = Right $ ConstDouble $ (fromIntegral i) - d
+duopLookUp (Sub) (ConstDouble d1) (ConstDouble d2) = Right $ ConstDouble $ d1 - d2
+duopLookUp (Sub) (ConstDouble d) (ConstInteger i) = Right $ ConstDouble $ d - (fromIntegral i)
+duopLookUp (Sub) (_) (ConstBool _) = Left "Expected Double or Integer, received Bool Second Argument"
+duopLookUp (Sub) (_) (ConstString _) = Left "Expected Double or Integer, received String Second Argument"
+duopLookUp (Sub) (_) (ConstChar _) = Left "Expected Double or Integer, received Char Second Argument"
+
+-- Multiplication
+duopLookUp (Mul) (ConstBool _ ) _ = Left "Expected Double or Integer, received Bool First Argument"
+duopLookUp (Mul) (ConstString _) _ = Left "Expected Double or Integer, received String First Argument"
+duopLookUp (Mul) (ConstChar _) _ = Left "Expected Double or Integer, received Char First Argument"
+duopLookUp (Mul) (ConstInteger i) (ConstInteger j) = Right $ ConstInteger $ i * j
+duopLookUp (Mul) (ConstInteger i) (ConstDouble d) = Right $ ConstDouble $ (fromIntegral i) * d
+duopLookUp (Mul) (ConstDouble d1) (ConstDouble d2) = Right $ ConstDouble $ d1 * d2
+duopLookUp (Mul) (ConstDouble d) (ConstInteger i) = Right $ ConstDouble $ d * (fromIntegral i)
+duopLookUp (Mul) (_) (ConstBool _) = Left "Expected Double or Integer, received Bool Second Argument"
+duopLookUp (Mul) (_) (ConstString _) = Left "Expected Double or Integer, received String Second Argument"
+duopLookUp (Mul) (_) (ConstChar _) = Left "Expected Double or Integer, received Char Second Argument"
+
+-- Division
+duopLookUp (Div) (ConstBool _ ) _ = Left "Expected Double or Integer, received Bool First Argument"
+duopLookUp (Div) (ConstString _) _ = Left "Expected Double or Integer, received String First Argument"
+duopLookUp (Div) (ConstChar _) _ = Left "Expected Double or Integer, received Char First Argument"
+--duopLookUp (Div) (ConstInteger i) (ConstInteger j) = Right $ ConstInteger $ i / j
+duopLookUp (Div) (ConstInteger i) (ConstDouble d) = Right $ ConstDouble $ (fromIntegral i) / d
+duopLookUp (Div) (ConstDouble d1) (ConstDouble d2) = Right $ ConstDouble $ d1 / d2
+duopLookUp (Div) (ConstDouble d) (ConstInteger i) = Right $ ConstDouble $ d / (fromIntegral i)
+duopLookUp (Div) (_) (ConstBool _) = Left "Expected Double or Integer, received Bool Second Argument"
+duopLookUp (Div) (_) (ConstString _) = Left "Expected Double or Integer, received String Second Argument"
+duopLookUp (Div) (_) (ConstChar _) = Left "Expected Double or Integer, received Char Second Argument"
+
+
+
 -- testing for equality
 duopLookUp (Equal) x y = Right $ ConstBool $ x == y
-
+duopLookUp (Greater) x y = Right $ ConstBool $ x > y
+duopLookUp (Less) x y = Right $ ConstBool $ x < y
 
 
 data Const = ConstBool Bool 
@@ -187,6 +226,7 @@ table = [ [Prefix (sst_reservedOp "~" >> return (Uno Not))]
         , [Infix (sst_reservedOp "+" >> return (Duo Add)) AssocLeft]
         , [Infix (sst_reservedOp "-" >> return (Duo Sub)) AssocLeft]
         , [Infix (sst_reservedOp "*" >> return (Duo Mul)) AssocLeft]
+        , [Infix (sst_reservedOp "/" >> return (Duo Div)) AssocLeft]
         , [Infix (sst_reservedOp "MOD" >> return (Duo Mod)) AssocLeft]
         , [Infix (sst_reservedOp ">" >> return (Duo Greater)) AssocLeft]
         , [Infix (sst_reservedOp "<" >> return (Duo Less)) AssocLeft]
@@ -259,7 +299,8 @@ mainparser = sst_whiteSpace >> stmtparser <* eof
 
 
 
-testString = "x:=7; y:=8; if (x==y) then z:= x+y; else z:= y;end_if"
+testString = "x:=16.0; y:=16; if (x == y) then z:= y*x; else z:= y;end_if/*; x:=y */"
+
 
 
 play :: String -> IO ()
