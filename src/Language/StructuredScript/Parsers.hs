@@ -119,11 +119,47 @@ duopLookUp (Div) (_) (ConstString _) = Left "Expected Double or Integer, receive
 duopLookUp (Div) (_) (ConstChar _) = Left "Expected Double or Integer, received Char Second Argument"
 
 
-
 -- testing for equality
-duopLookUp (Equal) x y = Right $ ConstBool $ x == y
-duopLookUp (Greater) x y = Right $ ConstBool $ x > y
-duopLookUp (Less) x y = Right $ ConstBool $ x < y
+duopLookUp (Equal) (ConstBool b1) (ConstBool b2) = Right $ ConstBool $ b1 == b2
+duopLookUp (Equal) (ConstString s1) (ConstString s2) = Right $ ConstBool $ s1 == s2
+duopLookUp (Equal) (ConstChar c1) (ConstChar c2) = Right $ ConstBool $ c1 == c2
+duopLookUp (Equal) (ConstInteger i1) (ConstInteger i2) = Right $ ConstBool $ i1 == i2
+duopLookUp (Equal) (ConstInteger i) (ConstDouble d) = Right $ ConstBool $ (fromIntegral i) == d
+duopLookUp (Equal) (ConstDouble d) (ConstInteger i) = Right $ ConstBool $ d == (fromIntegral i)
+duopLookUp (Equal) (ConstDouble d1) (ConstDouble d2) = Right $ ConstBool $ d1 == d2
+duopLookUp (Equal) (_) (_) = Left "The two variables are not comparable"
+
+-- testing for Greater than
+duopLookUp (Greater) (ConstBool b1) (ConstBool b2) = Right $ ConstBool $ b1 > b2
+duopLookUp (Greater) (ConstString s1) (ConstString s2) = Right $ ConstBool $ s1 > s2
+duopLookUp (Greater) (ConstChar c1) (ConstChar c2) = Right $ ConstBool $ c1 > c2
+duopLookUp (Greater) (ConstInteger i1) (ConstInteger i2) = Right $ ConstBool $ i1 > i2
+duopLookUp (Greater) (ConstInteger i) (ConstDouble d) = Right $ ConstBool $ (fromIntegral i) > d
+duopLookUp (Greater) (ConstDouble d) (ConstInteger i) = Right $ ConstBool $ d > (fromIntegral i)
+duopLookUp (Greater) (ConstDouble d1) (ConstDouble d2) = Right $ ConstBool $ d1 > d2
+duopLookUp (Greater) (_) (_) = Left "The two variables are not comparable"
+
+-- testing for Less than
+duopLookUp (Less) (ConstBool b1) (ConstBool b2) = Right $ ConstBool $ b1 < b2
+duopLookUp (Less) (ConstString s1) (ConstString s2) = Right $ ConstBool $ s1 < s2
+duopLookUp (Less) (ConstChar c1) (ConstChar c2) = Right $ ConstBool $ c1 < c2
+duopLookUp (Less) (ConstInteger i1) (ConstInteger i2) = Right $ ConstBool $ i1 < i2
+duopLookUp (Less) (ConstInteger i) (ConstDouble d) = Right $ ConstBool $ (fromIntegral i) < d
+duopLookUp (Less) (ConstDouble d) (ConstInteger i) = Right $ ConstBool $ d < (fromIntegral i)
+duopLookUp (Less) (ConstDouble d1) (ConstDouble d2) = Right $ ConstBool $ d1 < d2
+duopLookUp (Less) (_) (_) = Left "The two variables are not comparable"
+
+duopLookUp :: Duop -> Duop -> Const -> Const -> Either String Const
+-- testing for Greater than and Equal
+duopLookUp (Greater) (Equal) (ConstBool b1) (ConstBool b2) = Right $ ConstBool $ b1 >= b2
+duopLookUp (Greater) (Equal) (ConstString s1) (ConstString s2) = Right $ ConstBool $ s1 >= s2
+duopLookUp (Greater) (Equal) (ConstChar c1) (ConstChar c2) = Right $ ConstBool $ c1 >= c2
+duopLookUp (Greater) (Equal) (ConstInteger i1) (ConstInteger i2) = Right $ ConstBool $ i1 >= i2
+duopLookUp (Greater) (Equal) (ConstInteger i) (ConstDouble d) = Right $ ConstBool $ (fromIntegral i) >= d
+duopLookUp (Greater) (Equal) (ConstDouble d) (ConstInteger i) = Right $ ConstBool $ d >= (fromIntegral i)
+duopLookUp (Greater) (Equal) (ConstDouble d1) (ConstDouble d2) = Right $ ConstBool $ d1 >= d2
+duopLookUp (Greater) (Equal) (_) (_) = Left "The two variables are not comparable"
+
 
 
 data Const = ConstBool Bool 
@@ -153,7 +189,7 @@ def = emptyDef{ commentStart = "/*"
               , identLetter = alphaNum <|> char '_'
               , nestedComments = False
               , caseSensitive = True                             
-              , opStart = oneOf "==<>@^|&+-*/$MOD!?~.:"
+              , opStart = oneOf "==<>@^|&+-*/$MOD!?~.:>=<="
               , opLetter = oneOf "==<>@^|&+-*/$MOD!?~.:"
               , reservedOpNames = ["**",":=","NOT","~","*","/","MOD","+","-",">=","<=","<",">","=","<>","&","AND","OR","XOR",";"]
               , reservedNames = ["true", "false", "nop",
@@ -230,6 +266,9 @@ table = [ [Prefix (sst_reservedOp "~" >> return (Uno Not))]
         , [Infix (sst_reservedOp "MOD" >> return (Duo Mod)) AssocLeft]
         , [Infix (sst_reservedOp ">" >> return (Duo Greater)) AssocLeft]
         , [Infix (sst_reservedOp "<" >> return (Duo Less)) AssocLeft]
+	, [Infix (sst_reservedOp ">=" >> return (Duo Greater Duo Equal)) AssocLeft]
+        , [Infix (sst_reservedOp "<=" >> return (Duo Less Duo Equal)) AssocLeft]
+	, [Infix (sst_reservedOp "<>" >> return (Uno Not Duo Equal)) AssocLeft]
         ]
 
 term :: ParsecT String () Identity Expr        
@@ -299,7 +338,7 @@ mainparser = sst_whiteSpace >> stmtparser <* eof
 
 
 
-testString = "x:=16.0; y:=16; if (x == y) then z:= y*x; else z:= y;end_if/*; x:=y */"
+testString = "x:=16.0; y:= \"test\"; if (x >  y) then z:= y*x; else z:= y;end_if/*; x:=y */"
 
 
 
