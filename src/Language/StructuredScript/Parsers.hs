@@ -185,6 +185,25 @@ duopLookUp (NotEqual) (ConstDouble d) (ConstInteger i) = Right $ ConstBool $ d /
 duopLookUp (NotEqual) (ConstDouble d1) (ConstDouble d2) = Right $ ConstBool $ d1 /= d2
 duopLookUp (NotEqual) (_) (_) = Left "The two variables are not comparable"
 
+-- ===Relational Operators
+-- And Relations
+duopLookUp (And) (ConstBool b1) (ConstBool b2) = Right $ ConstBool $ b1 && b2
+-- duopLookUp (And) (ConstChar c1) (ConstChar c2) = Right $ ConstBool $ c1 && c2
+-- duopLookUp (And) (ConstInteger i1) (ConstInteger i2) = Right $ ConstBool $ i1 && i2
+duopLookUp (And) (_) (_) = Left "The two variables or expressions are not comparable"
+
+-- Or Relations
+duopLookUp (Or) (ConstBool b1) (ConstBool b2) = Right $ ConstBool $ b1 || b2
+-- duopLookUp (Or) (ConstChar c1) (ConstChar c2) = Right $ ConstBool $ c1 || c2
+-- duopLookUp (Or) (ConstInteger i1) (ConstInteger i2) = Right $ ConstBool $ i1 || i2
+duopLookUp (Or) (_) (_) = Left "The two variables or expressions are not comparable"
+
+-- XOr Relations
+duopLookUp (XOr) (ConstBool b1) (ConstBool b2) = Right $ ConstBool $ not (b1 || b2)
+-- duopLookUp (Or) (ConstChar c1) (ConstChar c2) = Right $ ConstBool $ not (c1 || c2)
+-- duopLookUp (Or) (ConstInteger i1) (ConstInteger i2) = Right $ ConstBool $ not (i1 || i2)
+duopLookUp (XOr) (_) (_) = Left "The two variables or expressions are not comparable"
+
 
 
 
@@ -198,7 +217,7 @@ data Const = ConstBool Bool
                    
 data Unop = Not deriving Show
 
-data Duop = And | Or | Xor | Iff 
+data Duop = And | Or | XOr | Iff 
            | Add | Mul | Div | Sub | Mod 
            | Greater | Less | Equal | GreaterEqual | LessEqual | NotEqual
            deriving Show
@@ -215,10 +234,10 @@ def = emptyDef{ commentStart = "/*"
               , identLetter = alphaNum <|> char '_'
               , nestedComments = False
               , caseSensitive = True                             
-              , opStart = oneOf "==<>@^|&+-*/$MOD!?~.:>=<="
-              , opLetter = oneOf "==<>@^|&+-*/$MOD!?~.:"
+              , opStart = oneOf "=<>@^|OR&AND+-*/$MOD?~NOT.:XOR"
+              , opLetter = oneOf "=<>@^|OR&AND+-*/$MOD?~NOT.:XOR"
               , reservedOpNames = ["**",":=","NOT","~","*","/","MOD","+","-",">=","<=","<",">","=","<>","&","AND","OR","XOR",";"]
-              , reservedNames = ["true", "false", "nop",
+              , reservedNames = ["True", "False", "nop",
                                  "if", "then", "else", "end_if"
                                   ] }
 
@@ -282,8 +301,12 @@ exprparser = buildExpressionParser table term <?> "expression"
 
 table :: [[Operator String u Identity Expr]]
 table = [ [Prefix (sst_reservedOp "~" >> return (Uno Not))]
-        , [Infix (sst_reservedOp "&" >> return (Duo And)) AssocLeft]
-        , [Infix (sst_reservedOp "|" >> return (Duo Or)) AssocLeft]
+	, [Prefix (sst_reservedOp "NOT" >> return (Uno Not))]
+        , [Infix (sst_reservedOp "&&" >> return (Duo And)) AssocLeft]
+	, [Infix (sst_reservedOp "AND" >> return (Duo And)) AssocLeft]
+        , [Infix (sst_reservedOp "||" >> return (Duo Or)) AssocLeft]
+	, [Infix (sst_reservedOp "OR" >> return (Duo Or)) AssocLeft]
+	, [Infix (sst_reservedOp "XOR" >> return (Duo XOr)) AssocLeft]
         , [Infix (sst_reservedOp "==" >> return (Duo Equal)) AssocLeft]
         , [Infix (sst_reservedOp "+" >> return (Duo Add)) AssocLeft]
         , [Infix (sst_reservedOp "-" >> return (Duo Sub)) AssocLeft]
@@ -295,6 +318,7 @@ table = [ [Prefix (sst_reservedOp "~" >> return (Uno Not))]
 	, [Infix (sst_reservedOp ">=" >> return (Duo GreaterEqual)) AssocLeft]
         , [Infix (sst_reservedOp "<=" >> return (Duo LessEqual)) AssocLeft]
 	, [Infix (sst_reservedOp "<>" >> return (Duo NotEqual)) AssocLeft]
+
         ]
 
 term :: ParsecT String () Identity Expr        
@@ -309,9 +333,9 @@ term = sst_parens exprparser
 
 
 boolTParser :: ParsecT String t Identity Expr
-boolTParser = (sst_reserved "true" >> return (Con (ConstBool True)))
+boolTParser = (sst_reserved "True" >> return (Con (ConstBool True)))
 boolFParser :: ParsecT String t Identity Expr
-boolFParser = (sst_reserved "false" >> return (Con (ConstBool False)))
+boolFParser = (sst_reserved "False" >> return (Con (ConstBool False)))
 
 
 -- | Parses any integer type constant to an Integer
@@ -363,7 +387,7 @@ mainparser = sst_whiteSpace >> stmtparser <* eof
               <|> return Nop
 
 
-testString = "x:=18; y:= 0; if (x > y) then z:= x/y; else z:= y;end_if/*; x:=y */"
+testString = "x:=18; y:= 7; b1:= False; b2:= False; if ((b1 XOR b2) && (x > y)) then z:= x/y; else z:= y;end_if/*; x:=y */"
 
 
 
