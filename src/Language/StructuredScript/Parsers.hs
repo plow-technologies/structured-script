@@ -43,6 +43,10 @@ evalExpr v (Duo op e1 e2) = do
     e2' <-   evalExpr v e2
     duopLookUp op  e1' e2'
 
+evalExpr v (Uno op e1) = do 
+    e1' <-   evalExpr v e1
+    unopLookUp op  e1' 
+
 evalExpr v@ (VT vt) (Var s) = case lookup (pack s) vt of 
                     Nothing -> Left $ "Does not Exist" ++ s
                     (Just found) ->  Right $ found     
@@ -71,9 +75,16 @@ insertToLut v@ (VT vt) (s := e) =  case evalExpr v e of
 insertToLut vt ( _ ) = Left "Received other error in insertToLut"
 
 -- Unary Operator lookup function
+-- Not Operator
 unopLookUp :: Unop -> Const -> Either String Const
 unopLookUp (Not) (ConstBool b) = Right $ ConstBool $ not b
 unopLookUp (Not) (_) = Left "The expected variable or expression is not boolean"
+
+-- Neg Operator
+unopLookUp (Neg) (ConstInteger i) = Right $ ConstInteger $ (-i)
+unopLookUp (Neg) (ConstDouble d) = Right $ ConstDouble $ (-d)
+unopLookUp (Neg) (_) = Left "Expected Numeric Values such as Integer or Double"
+
 
 -- Binary Operator lookup function
 duopLookUp :: Duop -> Const -> Const -> Either String Const
@@ -220,7 +231,7 @@ data Const = ConstBool Bool
            deriving (Show, Eq, Ord)
                     
                    
-data Unop = Not deriving Show
+data Unop = Not | Neg deriving Show
 
 data Duop = And | Or | XOr | Iff 
            | Add | Mul | Div | Sub | Mod 
@@ -307,6 +318,7 @@ exprparser = buildExpressionParser table term <?> "expression"
 table :: [[Operator String u Identity Expr]]
 table = [ [Prefix (sst_reservedOp "~" >> return (Uno Not))]
 	, [Prefix (sst_reservedOp "NOT" >> return (Uno Not))]
+	, [Prefix (sst_reservedOp "-" >> return (Uno Neg))]
         , [Infix (sst_reservedOp "&&" >> return (Duo And)) AssocLeft]
 	, [Infix (sst_reservedOp "AND" >> return (Duo And)) AssocLeft]
         , [Infix (sst_reservedOp "||" >> return (Duo Or)) AssocLeft]
@@ -392,7 +404,7 @@ mainparser = sst_whiteSpace >> stmtparser <* eof
               <|> return Nop
 
 
-testString = "x:=18; y:= 7; b1:= False; b2:= False; if ((b1 XOR b2) && (x > y)) then z:= x/y; else z:= y;end_if/*; x:=y */"
+testString = "x:=18; y:= 7; b1:= True; b2:= False; if (~(b1 XOR b2) && (x > y)) then z:= x - (-y); else z:= y;end_if/*; x:=y */"
 
 
 
