@@ -110,15 +110,19 @@ duopLookUp (Mul) (_) (ConstChar _) = Left "Expected Double or Integer, received 
 duopLookUp (Div) (ConstBool _ ) _ = Left "Expected Double or Integer, received Bool First Argument"
 duopLookUp (Div) (ConstString _) _ = Left "Expected Double or Integer, received String First Argument"
 duopLookUp (Div) (ConstChar _) _ = Left "Expected Double or Integer, received Char First Argument"
-duopLookUp (Div) (ConstInteger i) (ConstInteger j) = Right $ ConstInteger $ quot i j
-duopLookUp (Div) (ConstInteger i) (ConstDouble d) 
-			|d /= 0 =  Right $ ConstDouble $ (fromIntegral i) / d
-			|otherwise = Left "Divided by Zero Error"
-duopLookUp (Div) (ConstDouble d1) (ConstDouble d2) = Right $ ConstDouble $ d1 / d2
-duopLookUp (Div) (ConstDouble d) (ConstInteger i) = Right $ ConstDouble $ d / (fromIntegral i)
 duopLookUp (Div) (_) (ConstBool _) = Left "Expected Double or Integer, received Bool Second Argument"
 duopLookUp (Div) (_) (ConstString _) = Left "Expected Double or Integer, received String Second Argument"
 duopLookUp (Div) (_) (ConstChar _) = Left "Expected Double or Integer, received Char Second Argument"
+
+duopLookUp (Div) x y
+  |y == (ConstDouble 0)  =  Left $ "Divide by zero error"
+  |y == (ConstInteger 0) =  Left $ "Divide by zero error"
+  |otherwise =duopLookUpDiv (Div) x y
+    where
+      duopLookUpDiv (Div) (ConstInteger i) (ConstInteger j) = Right $ ConstInteger $ quot i j
+      duopLookUpDiv (Div) (ConstInteger i) (ConstDouble d)  =  Right $ ConstDouble $ (fromIntegral i) / dp
+      duopLookUpDiv (Div) (ConstDouble d1) (ConstDouble d2) = Right $ ConstDouble $ d1 / d2
+      duopLookUpDiv (Div) (ConstDouble d) (ConstInteger i) = Right $ ConstDouble $ d / (fromIntegral i)
 
 
 -- testing for equality
