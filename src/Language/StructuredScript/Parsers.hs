@@ -120,7 +120,7 @@ duopLookUp (Div) x y
   |otherwise =duopLookUpDiv (Div) x y
     where
       duopLookUpDiv (Div) (ConstInteger i) (ConstInteger j) = Right $ ConstInteger $ quot i j
-      duopLookUpDiv (Div) (ConstInteger i) (ConstDouble d)  =  Right $ ConstDouble $ (fromIntegral i) / dp
+      duopLookUpDiv (Div) (ConstInteger i) (ConstDouble d)  =  Right $ ConstDouble $ (fromIntegral i) / d
       duopLookUpDiv (Div) (ConstDouble d1) (ConstDouble d2) = Right $ ConstDouble $ d1 / d2
       duopLookUpDiv (Div) (ConstDouble d) (ConstInteger i) = Right $ ConstDouble $ d / (fromIntegral i)
 
