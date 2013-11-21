@@ -1,6 +1,6 @@
 {-# LANGUAGE NoImplicitPrelude,OverloadedStrings #-}
 module Language.StructuredScript.Parsers where
-import ClassyPrelude hiding ((<|>))
+import ClassyPrelude hiding ((<|>), insert, lookup, empty)
 import Data.Functor.Identity
 import Text.Parsec 
 import Text.Parsec.String
@@ -8,7 +8,10 @@ import Text.Parsec.Expr
 import Text.Parsec.Language
 import Text.Parsec.Token
 import Control.Applicative((<*>),(<$>))
+import Data.HashMap.Lazy hiding (foldl')
+import Data.List (foldl')
 --import Data.Either
+
 
 {-| SST Grammer 
 
@@ -23,18 +26,40 @@ x := true;
 data Expr = Var String | Con Const | Uno Unop Expr | Duo Duop Expr Expr 
     deriving Show
 
+type VType = Const 
+emptyVTable = VT empty 
+
+newtype VarTable = VT (HashMap Text VType) deriving (Show, Eq) 
+
+
 testStmtList = Seq ["x" := Duo Add (Con (ConstInteger 5)) (Con (ConstInteger 5))];
 testStmt = "x" := Duo Add (Con (ConstInteger 5)) (Con (ConstInteger 5));
 testExpr = Duo Add (Con (ConstInteger 5)) (Con (ConstInteger 5));
 testExpr2 = Duo Add (Con (ConstDouble 5.5)) (Con (ConstDouble 4.3));
 
-evalExpr :: Expr -> Either String Const
-evalExpr (Con x) = Right x
+evalExpr :: VarTable -> Expr -> Either String Const
+evalExpr _ (Con x) = Right x
 
-evalExpr (Duo op e1 e2) = do 
-    e1' <-   evalExpr e1
-    e2' <-   evalExpr e2
+evalExpr v (Duo op e1 e2) = do 
+    e1' <-   evalExpr v e1
+    e2' <-   evalExpr v e2
     duopLookUp op  e1' e2'
+
+evalExpr v@ (VT vt) (Var s) = case lookup (pack s) vt of 
+                    Nothing -> Left $ "Does not Exist" ++ s
+                    (Just found) ->  Right $ found     
+
+evalStmt ::  VarTable -> Stmt -> Either String VarTable
+evalStmt v@ (VT vt) (Seq lst) =  foldl' (\a b -> loop a b) (Right v) lst
+                                where loop :: Either String VarTable -> Stmt -> Either String VarTable
+                                      loop (Right vtable) s = evalStmt vtable s 
+                                      loop error _ = error
+                                
+evalStmt v st@ (s := e) = insertToLut v st 
+
+evalStmt _ _ = Left "Not Impremented"
+
+ 
 
 duopLookUp :: Duop -> Const -> Const -> Either String Const
 duopLookUp (Add) (ConstBool _ ) _ = Left "Expected Double or Integer, received Bool First Argument"
@@ -54,7 +79,7 @@ data Const = ConstBool Bool
            | ConstString String 
            | ConstChar Char
            | ConstDouble Double
-           deriving (Show, Eq)
+           deriving (Show, Eq, Ord)
                     
 
                     
@@ -68,6 +93,13 @@ data Duop = And | Or | Xor | Iff
 data Stmt = Nop | External | Global |String := Expr | If Expr Stmt Stmt 
           | Seq [Stmt]
           deriving Show
+
+insertToLut :: VarTable -> Stmt -> Either String VarTable 
+insertToLut v@ (VT vt) (s := e) =  case evalExpr v e of 
+                                Left s -> Left $ s ++ "In insertToLut"
+                                Right c -> Right $ VT $ insert (pack s) c vt
+insertToLut vt ( _ ) = Left "Received other error in insertToLut"
+
 
 
 def :: GenLanguageDef String st Identity
@@ -223,7 +255,7 @@ mainparser = sst_whiteSpace >> stmtparser <* eof
 
 
 
-testString = "if (true) then y:= 5;else = 6;nop"
+testString = "x:=7; y:=8; z:= y + x; output := x"
 
 
 play :: String -> IO ()
