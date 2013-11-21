@@ -10,6 +10,7 @@ import Text.Parsec.Token
 import Control.Applicative((<*>),(<$>))
 import Data.HashMap.Lazy hiding (foldl')
 import Data.List (foldl')
+import Data.Bits()
 
 
 {-| SST Grammer 
@@ -29,11 +30,6 @@ type VType = Const
 emptyVTable = VT empty 
 
 newtype VarTable = VT (HashMap Text VType) deriving (Show, Eq) 
-
-testStmtList = Seq ["x" := Duo Add (Con (ConstInteger 5)) (Con (ConstInteger 5))];
-testStmt = "x" := Duo Add (Con (ConstInteger 5)) (Con (ConstInteger 5));
-testExpr = Duo Add (Con (ConstInteger 5)) (Con (ConstInteger 5));
-testExpr2 = Duo Add (Con (ConstDouble 5.5)) (Con (ConstDouble 4.3));
 
 evalExpr :: VarTable -> Expr -> Either String Const
 evalExpr _ (Con x) = Right x
@@ -205,8 +201,8 @@ duopLookUp (NotEqual) (_) (_) = Left "The two variables are not comparable"
 -- ===Relational Operators
 -- And Relations
 duopLookUp (And) (ConstBool b1) (ConstBool b2) = Right $ ConstBool $ b1 && b2
--- duopLookUp (And) (ConstChar c1) (ConstChar c2) = Right $ ConstBool $ c1 && c2
--- duopLookUp (And) (ConstInteger i1) (ConstInteger i2) = Right $ ConstBool $ i1 && i2
+-- duopLookUp (And) (ConstChar c1) (ConstChar c2) = Right $ ConstChar $ c1 (.&.) c2
+-- duopLookUp (And) (ConstInteger i1) (ConstInteger i2) = Right $ ConstInteger $ i1 .&. i2
 duopLookUp (And) (_) (_) = Left "The two variables or expressions are not comparable"
 
 -- Or Relations
@@ -404,7 +400,7 @@ mainparser = sst_whiteSpace >> stmtparser <* eof
               <|> return Nop
 
 
-testString = "x:=18; y:= 7; b1:= True; b2:= False; if (~(b1 XOR b2) && (x > y)) then z:= x - (-y); else z:= y;end_if/*; x:=y */"
+testString = "x:=18; y:= 7; b1:= True; b2:= False; if (~(b1 XOR b2) && (x > 7)) then z:= x - (-y); else z:= y;end_if/*; x:=y */"
 
 
 
@@ -413,4 +409,11 @@ play inp = case parse mainparser "" inp of
               { Left err -> print err
               ; Right ans -> print ans
               }
-                 
+
+run :: String -> Stmt
+run str =
+	case parse mainparser "" str of
+    	Left e  -> error $ show e
+    	Right r -> r
+
+
