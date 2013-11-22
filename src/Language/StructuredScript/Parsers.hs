@@ -299,7 +299,8 @@ duopLookUp (Mod) x y
   |y == (ConstInteger 0) =  Left $ "Divide by zero error"
   |otherwise =duopLookUpMod (Mod) x y
     where
-      duopLookUpMod (Mod) (ConstInteger i) (ConstInteger j) = Right $ ConstInteger $ mod i j
+      duopLookUpMod (Mod) (ConstInteger i) (ConstInteger j) = Right $ ConstInteger $ rem i j
+      --duopLookUpMod (Mod) (ConstDouble i) (ConstDouble j) = Right $ ConstDouble $ rem i j
       duopLookUpMod (Mod) (_) (_)  =  Left $ "Error, Expected two Integer types"
      
 
@@ -346,7 +347,7 @@ duopLookUp (GreaterEqual) (ConstDouble d) (ConstInteger i) = Right $ ConstBool $
 duopLookUp (GreaterEqual) (ConstDouble d1) (ConstDouble d2) = Right $ ConstBool $ d1 >= d2
 duopLookUp (GreaterEqual) (_) (_) = Left "The two variables are not comparable"
 
--- |Check for Less than and Equal
+-- | Check for Less than and Equal
 duopLookUp (LessEqual) (ConstBool b1) (ConstBool b2) = Right $ ConstBool $ b1 <= b2
 duopLookUp (LessEqual) (ConstString s1) (ConstString s2) = Right $ ConstBool $ s1 <= s2
 duopLookUp (LessEqual) (ConstChar c1) (ConstChar c2) = Right $ ConstBool $ c1 <= c2
@@ -439,7 +440,7 @@ mainparser = sst_whiteSpace >> stmtparser <* eof
               <|> return Nop
 
 -- ========================Test String===========================
-testString = "x:=18; y:= 7; b1:= True; b2:= False; if (~(b1 XOR b2) && (x > 7)) then z:= x - (-(x MOD y)) ; else z:= y;end_if/*; x:=y */"
+testString = "x:=18; y:= 7; b1:= True; b2:= False; if (~(b1 XOR b2) && (x > 7)) then z:= x - (-x MOD y) ; else z:= y;end_if/*; x:=y */"
 
 -- | Takes a string and return an IO Type output
 play :: String -> IO ()
