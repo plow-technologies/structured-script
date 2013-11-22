@@ -371,22 +371,22 @@ duopLookUp (NotEqual) (ConstDouble d1) (ConstDouble d2) = Right $ ConstBool $ d1
 duopLookUp (NotEqual) (_) (_) = Left "The two variables are not comparable"
 
 -- ==Relational Operators==
--- | And Relations
+-- | And Relationsf
 duopLookUp (And) (ConstBool b1) (ConstBool b2) = Right $ ConstBool $ b1 && b2
--- duopLookUp (And) (ConstChar c1) (ConstChar c2) = Right $ ConstChar $ c1 (.&.) c2
--- duopLookUp (And) (ConstInteger i1) (ConstInteger i2) = Right $ ConstInteger $ i1 .&. i2
+duopLookUp (And) (ConstChar c1) (ConstChar c2) = Right $ ConstChar $ toEnum $ (fromEnum c1) .&. (fromEnum c2) 
+duopLookUp (And) (ConstInteger i1) (ConstInteger i2) = Right $ ConstInteger $ toEnum $ (fromEnum i1) .&. (fromEnum i2)
 duopLookUp (And) (_) (_) = Left "The two variables or expressions are not comparable"
 
 -- | Or Relations
 duopLookUp (Or) (ConstBool b1) (ConstBool b2) = Right $ ConstBool $ b1 || b2
--- duopLookUp (Or) (ConstChar c1) (ConstChar c2) = Right $ ConstBool $ c1 || c2
--- duopLookUp (Or) (ConstInteger i1) (ConstInteger i2) = Right $ ConstBool $ i1 || i2
+duopLookUp (Or) (ConstChar c1) (ConstChar c2) = Right $ ConstChar $ toEnum $ (fromEnum c1) .|. (fromEnum c2)
+duopLookUp (Or) (ConstInteger i1) (ConstInteger i2) = Right $ ConstInteger $ toEnum $ (fromEnum i1) .|. (fromEnum i2)
 duopLookUp (Or) (_) (_) = Left "The two variables or expressions are not comparable"
 
 -- | XOr Relations
-duopLookUp (XOr) (ConstBool b1) (ConstBool b2) = Right $ ConstBool $ not (b1 || b2)
--- duopLookUp (Or) (ConstChar c1) (ConstChar c2) = Right $ ConstBool $ not (c1 || c2)
--- duopLookUp (Or) (ConstInteger i1) (ConstInteger i2) = Right $ ConstBool $ not (i1 || i2)
+duopLookUp (XOr) (ConstBool b1) (ConstBool b2) = Right $ ConstBool $  not (b1 || b2)
+duopLookUp (XOr) (ConstChar c1) (ConstChar c2) = Right $ ConstChar $ toEnum $ (fromEnum c1) `xor` (fromEnum c2)
+duopLookUp (XOr) (ConstInteger i1) (ConstInteger i2) = Right $ ConstInteger $ toEnum $ (fromEnum i1) `xor` (fromEnum i2)
 duopLookUp (XOr) (_) (_) = Left "The two variables or expressions are not comparable"
 
 -- ========================Parse Terms===========================
@@ -443,7 +443,7 @@ mainparser = sst_whiteSpace >> stmtparser <* eof
               <|> return Nop
 
 -- ========================Test String===========================
-testString = "x:=18; y:= 7; b1:= True; b2:= False; s1:= \"This is a test program.\"; if (~(b1 XOR b2) && (x > 7)) then z:= x - (-x MOD y) ; s2:= \"The result is \" CONCAT z ; else z:= y;end_if/*; x:=y */"
+testString = "x:=18; y:= 7; b1:= True; b2:= False; /*c1:= \"c\"; c2:= \"2\"; c3:= c1 AND c2;*/ i3:= x XOR y; s1:= \"This is a test program.\"; if (~(b1 XOR b2) && (x > 7)) then z:= x - (-x MOD y) ; s2:= \"The result is \" CONCAT z ; else z:= y;end_if/*; x:=y */"
 
 -- | Takes a string and return an IO Type output
 play :: String -> IO ()
