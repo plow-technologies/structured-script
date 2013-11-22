@@ -48,7 +48,7 @@ data Unop = Not | Neg deriving Show
 -- | Arithmetic Operators -> [+, * , /, -, MOD]
 data Duop = And | Or | XOr 
            | Greater | Less | Equal | GreaterEqual | LessEqual | NotEqual
-	   | Add | Mul | Div | Sub | Mod 
+	   | Add | Mul | Div | Sub | Mod | Concat
            deriving Show
 
 -- | Statement Grammar
@@ -67,9 +67,9 @@ def = emptyDef{ commentStart = "/*"
               , identLetter = alphaNum <|> char '_'
               , nestedComments = False
               , caseSensitive = True                             
-              , opStart = oneOf "=<>@|OR&AND+-*/$MOD?~NOT.:XOR"
-              , opLetter = oneOf "=<>@|OR&AND+-*/$MOD?~NOT.:XOR"
-              , reservedOpNames = ["**",":=","NOT","~","*","/","MOD","+","-",">=","<=","<",">","=","<>","&","AND","OR","XOR",";"]
+              , opStart = oneOf "=<>@|OR&AND+-*/$MOD?~NOT.CONCAT:XOR"
+              , opLetter = oneOf "=<>@|OR&AND+-*/$MOD?~NOT.CONCAT:XOR"
+              , reservedOpNames = ["**",":=","NOT","~","*","/","MOD","CONCAT","+","-",">=","<=","<",">","=","<>","&","AND","OR","XOR",";"]
               , reservedNames = ["True", "False", "nop",
                                  "if", "then", "else", "end_if"
                                   ] }
@@ -180,6 +180,7 @@ table = [ [Prefix (sst_reservedOp "~" >> return (Uno Not))]
         , [Infix (sst_reservedOp "*" >> return (Duo Mul)) AssocLeft]
         , [Infix (sst_reservedOp "/" >> return (Duo Div)) AssocLeft]
         , [Infix (sst_reservedOp "MOD" >> return (Duo Mod)) AssocLeft]
+	, [Infix (sst_reservedOp "CONCAT" >> return (Duo Concat)) AssocLeft]
         , [Infix (sst_reservedOp ">" >> return (Duo Greater)) AssocLeft]
         , [Infix (sst_reservedOp "<" >> return (Duo Less)) AssocLeft]
 	, [Infix (sst_reservedOp ">=" >> return (Duo GreaterEqual)) AssocLeft]
@@ -302,9 +303,11 @@ duopLookUp (Mod) x y
       duopLookUpMod (Mod) (ConstInteger i) (ConstInteger j) = Right $ ConstInteger $ rem i j
       --duopLookUpMod (Mod) (ConstDouble i) (ConstDouble j) = Right $ ConstDouble $ rem i j
       duopLookUpMod (Mod) (_) (_)  =  Left $ "Error, Expected two Integer types"
-     
 
-
+-- | Concat Operator -> [ CONCAT]
+duopLookUp (Concat) (ConstString s ) a = Right $ ConstString $ s ++ (show a)
+duopLookUp (Concat) a (ConstString s)  = Right $ ConstString $ s ++ (show a)
+duopLookUp (Concat) (_) (_) = Left "The inputs cannot concatenate, either one need to be a string"
 
 -- ==Logical Operators==
 -- | Check for Equality
@@ -440,7 +443,7 @@ mainparser = sst_whiteSpace >> stmtparser <* eof
               <|> return Nop
 
 -- ========================Test String===========================
-testString = "x:=18; y:= 7; b1:= True; b2:= False; if (~(b1 XOR b2) && (x > 7)) then z:= x - (-x MOD y) ; else z:= y;end_if/*; x:=y */"
+testString = "x:=18; y:= 7; b1:= True; b2:= False; s1:= \"This is a test program.\"; if (~(b1 XOR b2) && (x > 7)) then z:= x - (-x MOD y) ; s2:= \"The result is \" CONCAT z CONCAT (\". Program Terminated.\"); else z:= y;end_if/*; x:=y */"
 
 -- | Takes a string and return an IO Type output
 play :: String -> IO ()
