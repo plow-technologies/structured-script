@@ -10,7 +10,7 @@ import Text.Parsec.Token
 import Control.Applicative((<*>),(<$>))
 import Data.HashMap.Lazy hiding (foldl')
 import Data.List (foldl')
-import Data.Bits()
+import Data.Bits
 
 
 {-| SST Grammer 
@@ -285,6 +285,26 @@ duopLookUp (Div) x y
       duopLookUpDiv (Div) (ConstDouble d1) (ConstDouble d2) = Right $ ConstDouble $ d1 / d2
       duopLookUpDiv (Div) (ConstDouble d) (ConstInteger i) = Right $ ConstDouble $ d / (fromIntegral i)
 
+-- | Modular Operator -> [ MOD ]
+duopLookUp (Mod) (ConstBool _ ) _ = Left "Expected Double or Integer, received Bool First Argument"
+duopLookUp (Mod) (ConstString _) _ = Left "Expected Double or Integer, received String First Argument"
+duopLookUp (Mod) (ConstChar _) _ = Left "Expected Double or Integer, received Char First Argument"
+duopLookUp (Mod) (_) (ConstBool _) = Left "Expected Double or Integer, received Bool Second Argument"
+duopLookUp (Mod) (_) (ConstString _) = Left "Expected Double or Integer, received String Second Argument"
+duopLookUp (Mod) (_) (ConstChar _) = Left "Expected Double or Integer, received Char Second Argument"
+
+-- Mod Zero Error handling
+duopLookUp (Mod) x y
+  |y == (ConstDouble 0)  =  Left $ "Divide by zero error"
+  |y == (ConstInteger 0) =  Left $ "Divide by zero error"
+  |otherwise =duopLookUpMod (Mod) x y
+    where
+      duopLookUpMod (Mod) (ConstInteger i) (ConstInteger j) = Right $ ConstInteger $ mod i j
+      duopLookUpMod (Mod) (_) (_)  =  Left $ "Error, Expected two Integer types"
+     
+
+
+
 -- ==Logical Operators==
 -- | Check for Equality
 duopLookUp (Equal) (ConstBool b1) (ConstBool b2) = Right $ ConstBool $ b1 == b2
@@ -419,7 +439,7 @@ mainparser = sst_whiteSpace >> stmtparser <* eof
               <|> return Nop
 
 -- ========================Test String===========================
-testString = "x:=18; y:= 7; b1:= True; b2:= False; if (~(b1 XOR b2) && (x > 7)) then z:= x - (-y * x) ; else z:= y;end_if/*; x:=y */"
+testString = "x:=18; y:= 7; b1:= True; b2:= False; if (~(b1 XOR b2) && (x > 7)) then z:= x - (-(x MOD y)) ; else z:= y;end_if/*; x:=y */"
 
 -- | Takes a string and return an IO Type output
 play :: String -> IO ()
