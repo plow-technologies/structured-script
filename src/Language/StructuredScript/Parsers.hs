@@ -459,4 +459,14 @@ run str =
     	Left e  -> error $ show e
     	Right r -> r
 
+sstParse :: String -> Either String Stmt
+sstParse s = case parse mainparser "" s of
+        Left e -> Left $ show e 
+        Right r -> Right r
+        
+
+
+
+
+
 
