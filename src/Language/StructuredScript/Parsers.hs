@@ -449,7 +449,9 @@ mainparser = sst_whiteSpace >> stmtparser <* eof
               <|> return Nop
 
 -- ========================Test String===========================
-testString = "x:=18; y:= 7; b1:= True; b2:= False; set:= 0 isSet 4;/*c1:= \"c\"; c2:= \"2\"; c3:= c1 AND c2;*/ i3:= x XOR y; s1:= \"This is a test program.\"; if (~(b1 XOR b2) && (x > 7)) then z:= x - (-x MOD y) ; s2:= \"The result is \" CONCAT z ; else z:= y;end_if/*; x:=y */; output:= z"
+testString = "x:= input1; y:= input2; b1:= True; b2:= False; set:= 0 isSet 4;/*c1:= \"c\"; c2:= \"2\"; c3:= c1 AND c2;*/ i3:= x XOR y; s1:= \"This is a test program.\"; if (~(b1 XOR b2) && (x > 7)) then z:= x - (-x MOD y) ; s2:= \"The result is \" CONCAT z ; else z:= y;end_if/*; x:=y */; output:= z"
+
+testList = ConstInteger <$> [18,7]
 
 -- ========================Intergration Function=================
 
@@ -481,14 +483,33 @@ sstEval vt stmt = case evalStmt vt stmt of
 	Right r -> Right r
 
 -- | Lookup output parameter from VarTable, return Either String or Const Type
-sstLookup :: VarTable -> Either String Const
-sstLookup (VT vt) = case lookup "output" vt of 
+sstLookupOutput :: VarTable -> Either String Const
+sstLookupOutput (VT vt) = case lookup "output" vt of 
 	Nothing -> Left $ "Parameter output is empty."
 	(Just result) -> Right result	
 
 -- | Test function sst, parse everything and returns an output
-sst = sstLookup =<< (evalStmt emptyVTable =<< sstParse testString)
+-- sst = sstLookupOutput =<< (evalStmt emptyVTable =<< sstParse testString)
 
+-- | Insert input into the script from a list of data
+sstInsertInput :: [Const] -> Either String VarTable
+sstInsertInput lst = Right $ VT $ foldl' (\a ((i,b)) -> insert ("input" ++ (show i) ) b a) empty (zip [1 .. ] lst)
+
+-- | Intergration Test Function for inserting a list of data and parse into a certain output
+{- | sstTest2 = do 
+	vt <- sstInsertInput testList
+	sstParse testString >>= sstEval vt >>= sstLookupOutput
+|-}
+
+sstTest :: String -> [Const] -> Either String Const
+sstTest s lst = do
+    vt <- sstInsertInput lst
+    stmt <- sstParse s
+    result <- sstEval vt stmt
+    case sstLookupOutput result of
+            Left e -> Left $ show e
+            Right r -> Right r
+	 
         
 
 
