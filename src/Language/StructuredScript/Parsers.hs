@@ -449,7 +449,7 @@ mainparser = sst_whiteSpace >> stmtparser <* eof
               <|> return Nop
 
 -- ========================Test String===========================
-testString = "x:=18; y:= 7; b1:= True; b2:= False; set:= 0 isSet 4;/*c1:= \"c\"; c2:= \"2\"; c3:= c1 AND c2;*/ i3:= x XOR y; s1:= \"This is a test program.\"; if (~(b1 XOR b2) && (x > 7)) then z:= x - (-x MOD y) ; s2:= \"The result is \" CONCAT z ; else z:= y;end_if/*; x:=y */"
+testString = "x:=18; y:= 7; b1:= True; b2:= False; set:= 0 isSet 4;/*c1:= \"c\"; c2:= \"2\"; c3:= c1 AND c2;*/ i3:= x XOR y; s1:= \"This is a test program.\"; if (~(b1 XOR b2) && (x > 7)) then z:= x - (-x MOD y) ; s2:= \"The result is \" CONCAT z ; else z:= y;end_if/*; x:=y */; output:= z"
 
 -- | Takes a string and return an IO Type output
 play :: String -> IO ()
@@ -478,6 +478,10 @@ sstLookup :: VarTable -> Either String Const
 sstLookup (VT vt) = case lookup "output" vt of 
 	Nothing -> Left $ "Parameter output is empty."
 	(Just result) -> Right result	
+
+-- | Test function sst, parse everything and returns an output
+sst = sstLookup =<< (evalStmt emptyVTable (run testString))
+
         
 
 
