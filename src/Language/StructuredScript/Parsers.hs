@@ -451,6 +451,9 @@ mainparser = sst_whiteSpace >> stmtparser <* eof
 -- ========================Test String===========================
 testString = "x:=18; y:= 7; b1:= True; b2:= False; set:= 0 isSet 4;/*c1:= \"c\"; c2:= \"2\"; c3:= c1 AND c2;*/ i3:= x XOR y; s1:= \"This is a test program.\"; if (~(b1 XOR b2) && (x > 7)) then z:= x - (-x MOD y) ; s2:= \"The result is \" CONCAT z ; else z:= y;end_if/*; x:=y */; output:= z"
 
+-- ========================Intergration Function=================
+
+{-|
 -- | Takes a string and return an IO Type output
 play :: String -> IO ()
 play inp = case parse mainparser "" inp of
@@ -463,24 +466,28 @@ run :: String -> Stmt
 run str = case parse mainparser "" str of
     	Left e  -> error $ show e
     	Right r -> r
+|-}
 
+-- | Intergration for Parse, return an Either String or Stmt Type
 sstParse :: String -> Either String Stmt
 sstParse s = case parse mainparser "" s of
         Left e -> Left $ show e 
         Right r -> Right r
 
+-- | Intergration for Evaluation of syntax, return an Either String or VarTable Type
 sstEval :: VarTable -> Stmt -> Either String VarTable
 sstEval vt stmt = case evalStmt vt stmt of
 	Left e -> Left $ show e
 	Right r -> Right r
 
+-- | Lookup output parameter from VarTable, return Either String or Const Type
 sstLookup :: VarTable -> Either String Const
 sstLookup (VT vt) = case lookup "output" vt of 
 	Nothing -> Left $ "Parameter output is empty."
 	(Just result) -> Right result	
 
 -- | Test function sst, parse everything and returns an output
-sst = sstLookup =<< (evalStmt emptyVTable (run testString))
+sst = sstLookup =<< (evalStmt emptyVTable =<< sstParse testString)
 
         
 
