@@ -46,7 +46,7 @@ data Unop = Not | Neg deriving Show
 -- | Relational Operators -> [&&, ||, XOR]
 -- | Logical Operators -> [>, <, ==, >=, <=, <>]
 -- | Arithmetic Operators -> [+, * , /, -, MOD]
-data Duop = And | Or | XOr 
+data Duop = And | Or | XOr | IsSet
            | Greater | Less | Equal | GreaterEqual | LessEqual | NotEqual
 	   | Add | Mul | Div | Sub | Mod | Concat
            deriving Show
@@ -67,9 +67,9 @@ def = emptyDef{ commentStart = "/*"
               , identLetter = alphaNum <|> char '_'
               , nestedComments = False
               , caseSensitive = True                             
-              , opStart = oneOf "=<>@|OR&AND+-*/$MOD?~NOT.CONCAT:XOR"
-              , opLetter = oneOf "=<>@|OR&AND+-*/$MOD?~NOT.CONCAT:XOR"
-              , reservedOpNames = ["**",":=","NOT","~","*","/","MOD","CONCAT","+","-",">=","<=","<",">","=","<>","&","AND","OR","XOR",";"]
+              , opStart = oneOf "=<>@|OR&AND+-*/$MOD?isSet~NOT.CONCAT:XOR"
+              , opLetter = oneOf "=<>@|OR&AND+-*/$MOD?isSet~NOT.CONCAT:XOR"
+              , reservedOpNames = ["**",":=","NOT","~","*","/","MOD","CONCAT","+","-",">=","<=","<",">","=","<>","&","AND","OR","XOR","isSet",";"]
               , reservedNames = ["True", "False", "nop",
                                  "if", "then", "else", "end_if"
                                   ] }
@@ -174,6 +174,7 @@ table = [ [Prefix (sst_reservedOp "~" >> return (Uno Not))]
         , [Infix (sst_reservedOp "||" >> return (Duo Or)) AssocLeft]
 	, [Infix (sst_reservedOp "OR" >> return (Duo Or)) AssocLeft]
 	, [Infix (sst_reservedOp "XOR" >> return (Duo XOr)) AssocLeft]
+	 ,[Infix (sst_reservedOp "isSet" >> return (Duo IsSet)) AssocLeft]
         , [Infix (sst_reservedOp "==" >> return (Duo Equal)) AssocLeft]
         , [Infix (sst_reservedOp "+" >> return (Duo Add)) AssocLeft]
         , [Infix (sst_reservedOp "-" >> return (Duo Sub)) AssocLeft]
@@ -389,6 +390,11 @@ duopLookUp (XOr) (ConstChar c1) (ConstChar c2) = Right $ ConstChar $ toEnum $ (f
 duopLookUp (XOr) (ConstInteger i1) (ConstInteger i2) = Right $ ConstInteger $ toEnum $ (fromEnum i1) `xor` (fromEnum i2)
 duopLookUp (XOr) (_) (_) = Left "The two variables or expressions are not comparable"
 
+-- | IsSet Function
+duopLookUp (IsSet) (ConstChar c1) (ConstInteger i) = Right $ ConstBool $ (fromEnum c1) `testBit` (fromEnum i)
+duopLookUp (IsSet) (ConstInteger i1) (ConstInteger i2) = Right $ ConstBool $ (fromEnum i1) `testBit` (fromEnum i2)
+duopLookUp (IsSet) (_) (_) = Left "The two variables or expressions are not comparable"
+
 -- ========================Parse Terms===========================
 -- | Parse Boolean
 boolTParser :: ParsecT String t Identity Expr
@@ -443,7 +449,7 @@ mainparser = sst_whiteSpace >> stmtparser <* eof
               <|> return Nop
 
 -- ========================Test String===========================
-testString = "x:=18; y:= 7; b1:= True; b2:= False; /*c1:= \"c\"; c2:= \"2\"; c3:= c1 AND c2;*/ i3:= x XOR y; s1:= \"This is a test program.\"; if (~(b1 XOR b2) && (x > 7)) then z:= x - (-x MOD y) ; s2:= \"The result is \" CONCAT z ; else z:= y;end_if/*; x:=y */"
+testString = "x:=18; y:= 7; b1:= True; b2:= False; set:= 0 isSet 4;/*c1:= \"c\"; c2:= \"2\"; c3:= c1 AND c2;*/ i3:= x XOR y; s1:= \"This is a test program.\"; if (~(b1 XOR b2) && (x > 7)) then z:= x - (-x MOD y) ; s2:= \"The result is \" CONCAT z ; else z:= y;end_if/*; x:=y */"
 
 -- | Takes a string and return an IO Type output
 play :: String -> IO ()
@@ -454,8 +460,7 @@ play inp = case parse mainparser "" inp of
 
 -- | Takes a string and returns an Stmt Type output
 run :: String -> Stmt
-run str =
-	case parse mainparser "" str of
+run str = case parse mainparser "" str of
     	Left e  -> error $ show e
     	Right r -> r
 
@@ -463,6 +468,16 @@ sstParse :: String -> Either String Stmt
 sstParse s = case parse mainparser "" s of
         Left e -> Left $ show e 
         Right r -> Right r
+
+sstEval :: VarTable -> Stmt -> Either String VarTable
+sstEval vt stmt = case evalStmt vt stmt of
+	Left e -> Left $ show e
+	Right r -> Right r
+
+sstLookup :: VarTable -> Either String Const
+sstLookup (VT vt) = case lookup "output" vt of 
+	Nothing -> Left $ "Parameter output is empty."
+	(Just result) -> Right result	
         
 
 

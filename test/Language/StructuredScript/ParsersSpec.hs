@@ -10,6 +10,7 @@ main :: IO ()
 main = hspec spec
 
 -- ============Test case for evalExpr==============
+-- | Testing for Addition
 testEvalExprInt = Duo Add (Con (ConstInteger 5)) (Con (ConstInteger 5));
 testEvalExprDouble = Duo Add (Con (ConstDouble 5.2)) (Con (ConstDouble 5.6));
 testEvalExprDoubleInt = Duo Add (Con (ConstDouble 5.2)) (Con (ConstInteger 5));
@@ -24,7 +25,7 @@ testIsLeft ( _ ) = False
 spec :: Spec
 spec = do
   describe "evalExpr" $ do
-    it "should return \"This is a test\"" $ do
+    it "should return \"Test for evalExpr\"" $ do
                             (evalExpr emptyVTable testEvalExprInt) `shouldBe` (Right $ ConstInteger 10) 
                             (evalExpr emptyVTable testEvalExprDouble) `shouldBe` (Right $ ConstDouble 10.8)
                             (evalExpr emptyVTable testEvalExprDoubleInt) `shouldBe` (Right $ ConstDouble 10.2)
