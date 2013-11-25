@@ -28,6 +28,6 @@ spec = do
                             (evalExpr emptyVTable testEvalExprInt) `shouldBe` (Right $ ConstInteger 10) 
                             (evalExpr emptyVTable testEvalExprDouble) `shouldBe` (Right $ ConstDouble 10.8)
                             (evalExpr emptyVTable testEvalExprDoubleInt) `shouldBe` (Right $ ConstDouble 10.2)
-                           -- (testIsLeft.evalExpr emptyVTable $ testEvalExprString) `shouldBe` True
-                           -- (testIsLeft.evalExpr $ emptyVTable testEvalExprBool) `shouldBe` True
-                           -- (testIsLeft.evalExpr $ emptyVTable testEvalExprChar) `shouldBe` True
+                            (testIsLeft.evalExpr emptyVTable $ testEvalExprString) `shouldBe` True
+                            (testIsLeft.evalExpr emptyVTable $ testEvalExprBool) `shouldBe` True
+                            (testIsLeft.evalExpr emptyVTable $ testEvalExprChar) `shouldBe` True
