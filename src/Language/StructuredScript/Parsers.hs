@@ -501,8 +501,8 @@ sstInsertInput lst = Right $ VT $ foldl' (\a ((i,b)) -> insert ("input" ++ (show
 	sstParse testString >>= sstEval vt >>= sstLookupOutput
 |-}
 
-sstTest :: String -> [Const] -> Either String Const
-sstTest s lst = do
+sstTest :: [Const]-> String -> Either String Const
+sstTest lst s = do
     vt <- sstInsertInput lst
     stmt <- sstParse s
     result <- sstEval vt stmt
