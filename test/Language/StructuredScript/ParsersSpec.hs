@@ -25,14 +25,27 @@ testString2 = "x:= input1; y:= input2; b1:= True; b2:= False; set:= 0 isSet 4;/*
 
 
 -- ============Test case for sstTest==============
--- | Test Case for Subtraction
-testCase = "x:= input1; y:= input2; output:= x - y"
-testListInteger = ConstInteger <$> [18, 7]
+-- | General Test Case
+testCaseBase = "x:= input1; y:= input2;"
+input1 = "output:= x"
+input2 = "y"
+listInteger = [18, 7]
+testListInteger = ConstInteger <$> listInteger
 testListDouble = ConstDouble <$> [7.7, 18.8]
 testListString = ConstString <$> ["Test String1", "Test String2"]
 testListBool = ConstBool <$> [True, False]
 testListChar = ConstChar <$> ['T', 'F']
 
+-- | Test Case for Addition
+testSSTAdd = testCaseBase ++ input1 ++ " + " ++ input2
+-- | Test Case for Subtraction
+testSSTSub = testCaseBase ++ input1 ++ " - " ++ input2
+-- | Test Case for Multiplication
+testSSTMul = testCaseBase ++ input1 ++ " * " ++ input2
+-- | Test Case for Division
+testSSTDiv = testCaseBase ++ input1 ++ " / " ++ input2
+-- | Test Case for Modular
+testSSTMod = testCaseBase ++ input1 ++ " MOD " ++ input2
 
 spec :: Spec
 spec = do
@@ -46,11 +59,51 @@ spec = do
         (testIsLeft.evalExpr emptyVTable $ testEvalExprChar) `shouldBe` True
 
   describe "Intergation Test for sstTest" $ do
+      -- | Test sst for Addition
+      it "should return \"Test for Addition\"" $ do
+        (sstTest testListInteger testSSTAdd) `shouldBe` (Right $ ConstInteger $ (18 + 7)) 
+        (sstTest testListDouble  testSSTAdd) `shouldBe` (Right $ ConstDouble  $ (7.7 + 18.8))
+        (testIsLeft.sstTest testListString $ testSSTAdd) `shouldBe` True
+        (testIsLeft.sstTest testListBool $ testSSTAdd) `shouldBe` True
+        (testIsLeft.sstTest testListChar $ testSSTAdd) `shouldBe` True
+
+      -- | Test sst for Subtraction
       it "should return \"Test for Subtraction\"" $ do
-    -- | Test evalExpr for Subtraction
-        (sstTest testListInteger testCase) `shouldBe` (Right $ ConstInteger 11) 
-        (sstTest testListDouble  testCase) `shouldBe` (Right $ ConstDouble  (7.7-18.8))
-        (testIsLeft.sstTest testListString $ testCase) `shouldBe` True
-        (testIsLeft.sstTest testListBool $ testCase) `shouldBe` True
-        (testIsLeft.sstTest testListChar$ testCase) `shouldBe` True
+        (sstTest testListInteger testSSTSub) `shouldBe` (Right $ ConstInteger $ (18 - 7)) 
+        (sstTest testListDouble  testSSTSub) `shouldBe` (Right $ ConstDouble  $ (7.7 - 18.8))
+        (testIsLeft.sstTest testListString $ testSSTSub) `shouldBe` True
+        (testIsLeft.sstTest testListBool $ testSSTSub) `shouldBe` True
+        (testIsLeft.sstTest testListChar $ testSSTSub) `shouldBe` True
+
+      -- | Test sst for Multiplication
+      it "should return \"Test for Multiplication\"" $ do
+        (sstTest testListInteger testSSTMul) `shouldBe` (Right $ ConstInteger $ (18 * 7)) 
+        (sstTest testListDouble  testSSTMul) `shouldBe` (Right $ ConstDouble  $ (7.7 * 18.8))
+        (testIsLeft.sstTest testListString $ testSSTMul) `shouldBe` True
+        (testIsLeft.sstTest testListBool $ testSSTMul) `shouldBe` True
+        (testIsLeft.sstTest testListChar $ testSSTMul) `shouldBe` True
+
+      -- | Test sst for Division
+      it "should return \"Test for Division\"" $ do
+        (sstTest testListInteger testSSTDiv) `shouldBe` (Right $ ConstInteger $ (18 `div` 7)) 
+        (sstTest testListDouble  testSSTDiv) `shouldBe` (Right $ ConstDouble  $ (7.7 / 18.8))
+        (testIsLeft.sstTest testListString $ testSSTDiv) `shouldBe` True
+        (testIsLeft.sstTest testListBool $ testSSTDiv) `shouldBe` True
+        (testIsLeft.sstTest testListChar $ testSSTDiv) `shouldBe` True
+      context "special case \"Divided zero\"" $ do 
+	it "should return \"a Left Error\"" $ do
+	(testIsLeft.sstTest testListInteger $ (testCaseBase ++ "y:= 0;" ++ input1 ++ " / " ++ input2)) `shouldBe` True
+
+      -- | Test sst for Modular
+      it "should return \"Test for Modular\"" $ do
+        (sstTest testListInteger testSSTMod) `shouldBe` (Right $ ConstInteger $ (18 `mod` 7)) 
+     	(testIsLeft.sstTest testListDouble $ testSSTMod) `shouldBe` True
+        (testIsLeft.sstTest testListString $ testSSTMod) `shouldBe` True
+        (testIsLeft.sstTest testListBool $ testSSTMod) `shouldBe` True
+        (testIsLeft.sstTest testListChar $ testSSTMod) `shouldBe` True
+      context "special case \"modular zero\"" $ do 
+	it "should return \"a Left Error\"" $ do
+	(testIsLeft.sstTest testListInteger $ (testCaseBase ++ "y:= 0;" ++ input1 ++ " / " ++ input2)) `shouldBe` True
+	
+
                           
