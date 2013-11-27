@@ -268,7 +268,7 @@ duopLookUp (Mul) (_) (ConstBool _) = Left "Expected Double or Integer, received 
 duopLookUp (Mul) (_) (ConstString _) = Left "Expected Double or Integer, received String Second Argument"
 duopLookUp (Mul) (_) (ConstChar _) = Left "Expected Double or Integer, received Char Second Argument"
 
--- | Division Operator -> [ / ]
+-- | Division Operator -> [ / ] 
 duopLookUp (Div) (ConstBool _ ) _ = Left "Expected Double or Integer, received Bool First Argument"
 duopLookUp (Div) (ConstString _) _ = Left "Expected Double or Integer, received String First Argument"
 duopLookUp (Div) (ConstChar _) _ = Left "Expected Double or Integer, received Char First Argument"
@@ -372,7 +372,7 @@ duopLookUp (NotEqual) (ConstDouble d1) (ConstDouble d2) = Right $ ConstBool $ d1
 duopLookUp (NotEqual) (_) (_) = Left "The two variables are not comparable"
 
 -- ==Relational Operators==
--- | And Relationsf
+-- | And Relations
 duopLookUp (And) (ConstBool b1) (ConstBool b2) = Right $ ConstBool $ b1 && b2
 duopLookUp (And) (ConstChar c1) (ConstChar c2) = Right $ ConstChar $ toEnum $ (fromEnum c1) .&. (fromEnum c2) 
 duopLookUp (And) (ConstInteger i1) (ConstInteger i2) = Right $ ConstInteger $ toEnum $ (fromEnum i1) .&. (fromEnum i2)

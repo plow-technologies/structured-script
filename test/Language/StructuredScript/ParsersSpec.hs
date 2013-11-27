@@ -21,11 +21,11 @@ testEvalExprChar = Duo Add (Con (ConstChar 'T')) (Con (ConstChar 'F'));
 testIsLeft (Left _ ) = True
 testIsLeft ( _ ) = False
 
-testString2 = "x:= input1; y:= input2; b1:= True; b2:= False; set:= 0 isSet 4;/*c1:= \"c\"; c2:= \"2\"; c3:= c1 AND c2;*/ i3:= x XOR y; s1:= \"This is a test program.\"; if (~(b1 XOR b2) && (x > 7)) then z:= x - (-x MOD y) ; s2:= \"The result is \" CONCAT z ; else z:= y;end_if/*; x:=y */; output:= z"
+testString2 = "x:= input1; y:= input2; b1:= True; b2:= False; b3:= b1 && b2; set:= 0 isSet 4;i3:= x XOR y; s1:= \"This is a test program.\"; if (~(b1 XOR b2) && (x > 7)) then z:= x - (-x MOD y) ; s2:= \"The result is \" CONCAT z ; else z:= y;end_if/*; x:=y */; output:= z"
 
 
--- ============Test case for sstTest==============
 -- | General Test Case
+-- ============Test case for sstTest==============
 testCaseBase = "x:= input1; y:= input2;"
 input1 = "output:= x"
 input2 = "y"
@@ -104,6 +104,10 @@ spec = do
       context "special case \"modular zero\"" $ do 
 	it "should return \"a Left Error\"" $ do
 	(testIsLeft.sstTest testListInteger $ (testCaseBase ++ "y:= 0;" ++ input1 ++ " / " ++ input2)) `shouldBe` True
+
+      -- | Test sst for Overall Testing
+      it "should return \"Test for Intergration\"" $ do
+        (sstTest testListInteger testString2) `shouldBe` (Right $ ConstInteger $ (18 - (-18 `mod` 7))) 
 	
 
                           
