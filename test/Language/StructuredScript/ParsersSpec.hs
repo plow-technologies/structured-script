@@ -111,5 +111,8 @@ spec = do
       it "should return \"Test for Intergration\"" $ do
         (sstTest testListInteger testString2) `shouldBe` (Right $ ConstInteger $ (18 - (-18 `mod` 7))) 
 
-     
+      it "should return \"Test for Exponent\"" $ do
+        (sstTest testListInteger testSSTPow) `shouldBe` (Right $ ConstInteger $ (18 ^ 7)) 
+        (sstTest testListDouble (testCaseBase ++ "y:= 2;" ++ input1 ++ " ** " ++ input2)) `shouldBe` (Right $ ConstDouble $ (7.7 ^ 2)) 
+      
                           
