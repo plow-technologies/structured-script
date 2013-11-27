@@ -46,6 +46,8 @@ testSSTMul = testCaseBase ++ input1 ++ " * " ++ input2
 testSSTDiv = testCaseBase ++ input1 ++ " / " ++ input2
 -- | Test Case for Modular
 testSSTMod = testCaseBase ++ input1 ++ " MOD " ++ input2
+-- | Test Case for Exponent
+testSSTPow = testCaseBase ++ input1 ++ " ** " ++ input2
 
 spec :: Spec
 spec = do
@@ -108,6 +110,6 @@ spec = do
       -- | Test sst for Overall Testing
       it "should return \"Test for Intergration\"" $ do
         (sstTest testListInteger testString2) `shouldBe` (Right $ ConstInteger $ (18 - (-18 `mod` 7))) 
-	
 
+     
                           

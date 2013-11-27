@@ -48,7 +48,7 @@ data Unop = Not | Neg deriving Show
 -- | Arithmetic Operators -> [+, * , /, -, MOD]
 data Duop = And | Or | XOr | IsSet
            | Greater | Less | Equal | GreaterEqual | LessEqual | NotEqual
-	   | Add | Mul | Div | Sub | Mod | Concat
+	   | Add | Mul | Div | Sub | Mod | Concat | Pow
            deriving Show
 
 -- | Statement Grammar
@@ -69,7 +69,7 @@ def = emptyDef{ commentStart = "/*"
               , caseSensitive = True                             
               , opStart = oneOf "=<>@|OR&AND+-*/$MOD?isSet~NOT.CONCAT:XOR"
               , opLetter = oneOf "=<>@|OR&AND+-*/$MOD?isSet~NOT.CONCAT:XOR"
-              , reservedOpNames = ["**",":=","NOT","~","*","/","MOD","CONCAT","+","-",">=","<=","<",">","=","<>","&","AND","OR","XOR","isSet",";"]
+              , reservedOpNames = ["**",":=","NOT","~","*","/","MOD","CONCAT","**","+","-",">=","<=","<",">","=","<>","&","AND","OR","XOR","isSet",";"]
               , reservedNames = ["True", "False", "nop",
                                  "if", "then", "else", "end_if"
                                   ] }
@@ -179,6 +179,7 @@ table = [ [Prefix (sst_reservedOp "~" >> return (Uno Not))]
         , [Infix (sst_reservedOp "+" >> return (Duo Add)) AssocLeft]
         , [Infix (sst_reservedOp "-" >> return (Duo Sub)) AssocLeft]
         , [Infix (sst_reservedOp "*" >> return (Duo Mul)) AssocLeft]
+	, [Infix (sst_reservedOp "**" >> return (Duo Pow)) AssocLeft]
         , [Infix (sst_reservedOp "/" >> return (Duo Div)) AssocLeft]
         , [Infix (sst_reservedOp "MOD" >> return (Duo Mod)) AssocLeft]
 	, [Infix (sst_reservedOp "CONCAT" >> return (Duo Concat)) AssocLeft]
@@ -309,6 +310,13 @@ duopLookUp (Mod) x y
 duopLookUp (Concat) (ConstString s ) a = Right $ ConstString $ s ++ (show a)
 duopLookUp (Concat) a (ConstString s)  = Right $ ConstString $ s ++ (show a)
 duopLookUp (Concat) (_) (_) = Left "The inputs cannot concatenate, either one need to be a string"
+
+-- | Exponent Operator -> [ ** ]
+duopLookUp (Pow) (ConstInteger x) (ConstInteger y) = Right $ ConstInteger $ x ^ y
+duopLookUp (Pow) (ConstDouble x) (ConstInteger y) = Right $ ConstDouble $ x ^ y
+duopLookUp (Pow) (_) (ConstDouble _) = Left "The second variable needs to be an integer value."
+duopLookUp (Pow) (_) (_) = Left "Exponent Operation cannot apply to these two values."
+
 
 -- ==Logical Operators==
 -- | Check for Equality
