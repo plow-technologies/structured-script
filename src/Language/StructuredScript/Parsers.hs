@@ -25,7 +25,7 @@ x := true;
 
 -- | Expression Grammar
 data Expr = Var String | Con Const | Uno Unop Expr | Duo Duop Expr Expr 
-    deriving Show
+    deriving (Show,Read,Eq)
 
 type VType = Const 
 newtype VarTable = VT (HashMap Text VType) deriving (Show, Eq) 
@@ -38,10 +38,10 @@ data Const = ConstBool Bool
            | ConstString String 
            | ConstChar Char
            | ConstDouble Double
-           deriving (Show, Eq, Ord)
+           deriving (Show, Eq, Ord,Read)
 
 -- | Unary Operators [~,-]                                       
-data Unop = Not | Neg deriving Show
+data Unop = Not | Neg deriving (Show,Eq,Read)
 
 -- | Binary Operators 
 -- | Relational Operators -> [&&, ||, XOR]
@@ -50,13 +50,13 @@ data Unop = Not | Neg deriving Show
 data Duop = And | Or | XOr | IsSet
            | Greater | Less | Equal | GreaterEqual | LessEqual | NotEqual
 	   | Add | Mul | Div | Sub | Mod | Concat | Pow
-           deriving Show
+           deriving (Read, Show,Eq)
 
 -- | Statement Grammar
 -- | ~stmt | External | x: = a + b | if (a == b) stmt1 stmt2
 data Stmt = Nop | External | String := Expr | If Expr Stmt Stmt 
           | Seq [Stmt]
-          deriving Show
+          deriving (Show, Read,Eq)
 
 -- | General Language Rules
 -- | Comment: "/* */
