@@ -7,6 +7,7 @@ import Text.Parsec.String
 import Text.Parsec.Expr
 import Text.Parsec.Language
 import Text.Parsec.Token
+import qualified Data.Vector as V
 import Control.Applicative((<*>),(<$>))
 import Data.HashMap.Lazy hiding (foldl')
 import Data.List (foldl')
@@ -502,6 +503,10 @@ sstLookupOutput (VT vt) = case lookup "output" vt of
 -- | Insert input into the script from a list of data
 sstInsertInput :: [Const] -> Either String VarTable
 sstInsertInput lst = Right $ VT $ foldl' (\a ((i,b)) -> insert ("input" ++ (show i) ) b a) empty (zip [1 .. ] lst)
+
+sstInsertInputVector :: V.Vector Const -> Either String VarTable
+sstInsertInputVector v = Right $ VT $ V.ifoldl' iFoldFcn empty v
+  where iFoldFcn a i b = insert ("input" ++ (show i)) b a 
 
 -- | Intergration Test Function for inserting a list of data and parse into a certain output
 {- | sstTest2 = do 
