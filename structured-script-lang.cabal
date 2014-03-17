@@ -4,13 +4,12 @@ Author:                 Scott Murphy<scottmurphy09@gmail.com>
 Maintainer:             Scott Murphy<scottmurphy09@gmail.com>
 License:                BSD3
 License-File:           LICENSE
--- Synopsis:               
--- Description:            
-Cabal-Version:          >= 1.2
+Synopsis:               Structured Script package from plow
+Description:            structrued script lang from plow
+Cabal-Version:          >= 1.8
 Build-Type:             Simple
 
 Library
-  Default-Language:     Haskell2010
   HS-Source-Dirs:       src
   GHC-Options:          -Wall
   Exposed-Modules:      Language.StructuredScript
@@ -58,4 +57,4 @@ Executable structured-script-lang
 
 Source-Repository head
   Type:                 git
---  Location:             
+  Location:             https://github.com/plow-technologies/structured-script
