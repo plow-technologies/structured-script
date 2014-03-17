@@ -45,12 +45,14 @@ Test-Suite spec
   Main-Is:              Spec.hs
   Build-Depends:        base
                       , hspec
+                      , classy-prelude
 
 
 Executable structured-script-lang
     main-is:            Main.hs
     HS-Source-Dirs:     src
     build-depends:      base
+                      , classy-prelude
                                           
     ghc-options:      -threaded -O2 -rtsopts
 
