@@ -92,9 +92,6 @@ spec = do
         (testIsLeft.sstTest testListString $ testSSTDiv) `shouldBe` True
         (testIsLeft.sstTest testListBool $ testSSTDiv) `shouldBe` True
         (testIsLeft.sstTest testListChar $ testSSTDiv) `shouldBe` True
-      context "special case \"Divided zero\"" $ do 
-	it "should return \"a Left Error\"" $ do
-	(testIsLeft.sstTest testListInteger $ (testCaseBase ++ "y:= 0;" ++ input1 ++ " / " ++ input2)) `shouldBe` True
 
       -- | Test sst for Modular
       it "should return \"Test for Modular\"" $ do
@@ -103,10 +100,7 @@ spec = do
         (testIsLeft.sstTest testListString $ testSSTMod) `shouldBe` True
         (testIsLeft.sstTest testListBool $ testSSTMod) `shouldBe` True
         (testIsLeft.sstTest testListChar $ testSSTMod) `shouldBe` True
-      context "special case \"modular zero\"" $ do 
-	it "should return \"a Left Error\"" $ do
-	(testIsLeft.sstTest testListInteger $ (testCaseBase ++ "y:= 0;" ++ input1 ++ " / " ++ input2)) `shouldBe` True
-
+   
       -- | Test sst for Overall Testing
       it "should return \"Test for Intergration\"" $ do
         (sstTest testListInteger testString2) `shouldBe` (Right $ ConstInteger $ (18 - (-18 `mod` 7))) 
@@ -115,4 +109,10 @@ spec = do
         (sstTest testListInteger testSSTPow) `shouldBe` (Right $ ConstInteger $ (18 ^ 7)) 
         (sstTest testListDouble (testCaseBase ++ "y:= 2;" ++ input1 ++ " ** " ++ input2)) `shouldBe` (Right $ ConstDouble $ (7.7 ^ 2)) 
       
+  describe "special case \"Divided zero\"" $ do 
+       it "should return \"a Left Error\"" $ do
+        	(testIsLeft.sstTest testListInteger $ (testCaseBase ++ "y:= 0;" ++ input1 ++ " / " ++ input2)) `shouldBe` True
                           
+  describe "special case \"modular zero\"" $ do 
+	it "should return \"a Left Error\"" $ do
+        	(testIsLeft.sstTest testListInteger $ (testCaseBase ++ "y:= 0;" ++ input1 ++ " / " ++ input2)) `shouldBe` True

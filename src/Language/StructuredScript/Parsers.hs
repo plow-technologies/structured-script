@@ -8,7 +8,7 @@ import Text.Parsec.Expr
 import Text.Parsec.Language
 import Text.Parsec.Token
 import qualified Data.Vector as V
-import Control.Applicative((<*>),(<$>))
+
 import Data.HashMap.Lazy hiding (foldl')
 import Data.List (foldl')
 import Data.Bits
@@ -29,6 +29,8 @@ data Expr = Var String | Con Const | Uno Unop Expr | Duo Duop Expr Expr
 
 type VType = Const 
 newtype VarTable = VT (HashMap Text VType) deriving (Show, Eq) 
+
+emptyVTable :: VarTable
 emptyVTable = VT empty 
 
 -- | Define basic Data Types
@@ -136,14 +138,14 @@ sst_whiteSpace  =  whiteSpace   sst_lexer
 
 -- ========================Statement Evaluation===========================
 evalStmt ::  VarTable -> Stmt -> Either String VarTable
-evalStmt v@ (VT vt) (Seq lst) =  foldl' (\a b -> loop a b) (Right v) lst
+evalStmt v@ (VT _vt) (Seq lst) =  foldl' (\a b -> loop a b) (Right v) lst
                                 where loop :: Either String VarTable -> Stmt -> Either String VarTable
                                       loop (Right vtable) s = evalStmt vtable s 
-                                      loop error _ = error
+                                      loop err _ = err
                                 
-evalStmt v st@ (s := e) = insertToLut v st 
+evalStmt v st = insertToLut v st  -- st@(_s := e)
 
-evalStmt v@ (VT vt) (If e s1 s2) = case evalExpr v e of 
+evalStmt v@ (VT _vt) (If e s1 s2) = case evalExpr v e of 
                                 (Right (ConstBool True)) -> evalStmt v s1 
                                 (Right (ConstBool False)) -> evalStmt v s2
                                 (Right x) -> Left $ (show x) ++ " not a well formed bool"
@@ -154,7 +156,7 @@ evalStmt _ _ = Left "Not Impremented"
 
 insertToLut :: VarTable -> Stmt -> Either String VarTable 
 insertToLut v@ (VT vt) (s := e) =  case evalExpr v e of 
-                                Left s -> Left $ s ++ "In insertToLut"
+                                Left s' -> Left $ s' ++ "In insertToLut"
                                 Right c -> Right $ VT $ insert (pack s) c vt
 insertToLut vt ( _ ) = Left "Received other error in insertToLut"
 
