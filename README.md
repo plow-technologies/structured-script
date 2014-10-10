@@ -1,4 +1,4 @@
-# structured-script-lang
+# structured-script-lang [![Circle CI](https://circleci.com/gh/plow-technologies/structured-script.png?style=shield)](https://circleci.com/gh/plow-technologies/structured-script)
 
 ## Structured Script is.
 
