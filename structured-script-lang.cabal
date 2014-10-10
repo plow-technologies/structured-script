@@ -1,6 +1,6 @@
 
 Name:                   structured-script-lang
-Version:                0.1.6
+Version:                0.1.7
 Author:                 Scott Murphy<scottmurphy09@gmail.com>
 Maintainer:             Scott Murphy<scottmurphy09@gmail.com>
 License:                BSD3
@@ -33,7 +33,7 @@ Test-Suite spec
   Main-Is:              Spec.hs
   Build-Depends:        base
                       , hspec
-                      , classy-prelude
+                      , classy-prelude >= 0.5.6     &&   < 0.5.11
                       , transformers         
                       , parsec               
                       , vector               
@@ -44,7 +44,7 @@ Executable structured-script-lang
     main-is:            Main.hs
     HS-Source-Dirs:     src
     build-depends:      base
-                      , classy-prelude
+                      , classy-prelude >= 0.5.6     &&   < 0.5.11
                                           
     ghc-options:      -threaded -O2 -rtsopts
 

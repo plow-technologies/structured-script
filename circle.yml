@@ -1,0 +1,33 @@
+machine:
+  ghc:
+    version: 7.8.3
+
+  environment:
+    PATH: $HOME/.cabal/bin:$CIRCLE_ARTIFACTS:$PATH:/$HOME/.cabal-sandbox/bin
+
+dependencies:
+
+  cache_directories:
+    - .cabal-sandbox
+    - dist
+
+  override:
+    - "if [ ! -f /home/ubuntu/.cabal/config ]; then cabal update && echo remote-repo: hackage.plowtech.net:http://hackage.plowtech.net/packages/archive >> ~/.cabal/config; else echo .cabal/config file already exists; fi"
+    - cabal update
+    if [-f ./.cabal-sandbox/packages]; then rm .cabal-sandbox/packages/*; fi
+    - cabal sandbox init
+    - cabal install --only-dependencies --enable-tests
+    - if [ "$CIRCLE_BRANCH" == "production" ]; then yesod configure && echo "configuring for production build"; else cabal configure -fdev && echo "configuring non-production build"; fi
+
+test:
+  override:
+    - cabal build:
+        timeout: 3000
+    - cabal test --show-details=always:
+        timeout: 3000
+
+# deployment:
+#   staging:
+#     branch: master
+#     commands:
+#       - ./deploy_staging.sh

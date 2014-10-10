@@ -1,51 +1,65 @@
-{-# LANGUAGE NoImplicitPrelude,OverloadedStrings #-}
+{- |
+Module      :  <Language.StructuredScript.Parsers>
+Description :  <Parsers for StructuredScript>
+Copyright   :  (c) <Plow Technology 2014>
+License     :  <MIT>
+
+Maintainer  :  <lingpo.huang@plowtech.net>
+Stability   :  unstable
+Portability :  portable
+
+<Parser function to define the grammer of the scheme>
+-}
+{-# LANGUAGE NoImplicitPrelude #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Language.StructuredScript.Parsers where
-import ClassyPrelude hiding ((<|>), insert, lookup, empty)
-import Data.Functor.Identity
-import Text.Parsec 
-import Text.Parsec.String
-import Text.Parsec.Expr
-import Text.Parsec.Language
-import Text.Parsec.Token
-import qualified Data.Vector as V
+-- Genearl
+import           ClassyPrelude         hiding (empty, insert, lookup, (<|>))
+import           Data.Functor.Identity
+-- Data Container
+import           Data.Bits
+import           Data.HashMap.Lazy     hiding (foldl')
+import           Data.List             (foldl')
+import qualified Data.Vector           as V
+-- Text Parser
+import           Text.Parsec
+import           Text.Parsec.Expr
+import           Text.Parsec.Language
+import           Text.Parsec.String
+import           Text.Parsec.Token
 
-import Data.HashMap.Lazy hiding (foldl')
-import Data.List (foldl')
-import Data.Bits
+{-| SST Grammer
 
 
-{-| SST Grammer 
-
-
-Useage examples: 
+Useage examples:
 
 x := true;
 
 |-}
 
 -- | Expression Grammar
-data Expr = Var String | Con Const | Uno Unop Expr | Duo Duop Expr Expr 
+data Expr = Var String | Con Const | Uno Unop Expr | Duo Duop Expr Expr
     deriving (Show,Read,Eq)
 
-type VType = Const 
-newtype VarTable = VT (HashMap Text VType) deriving (Show, Eq) 
+type VType = Const
+newtype VarTable = VT (HashMap Text VType) deriving (Show, Eq)
 
 emptyVTable :: VarTable
-emptyVTable = VT empty 
+emptyVTable = VT empty
 
 -- | Define basic Data Types
--- | Boolean | Integer | Double | String | Character 
-data Const = ConstBool Bool 
-           | ConstInteger Integer 
-           | ConstString String 
+-- | Boolean | Integer | Double | String | Character
+data Const = ConstBool Bool
+           | ConstInteger Integer
+           | ConstString String
            | ConstChar Char
            | ConstDouble Double
            deriving (Show, Eq, Ord,Read)
 
--- | Unary Operators [~,-]                                       
+-- | Unary Operators [~,-]
 data Unop = Not | Neg deriving (Show,Eq,Read)
 
--- | Binary Operators 
+-- | Binary Operators
 -- | Relational Operators -> [&&, ||, XOR]
 -- | Logical Operators -> [>, <, ==, >=, <=, <>]
 -- | Arithmetic Operators -> [+, * , /, -, MOD]
@@ -56,20 +70,20 @@ data Duop = And | Or | XOr | IsSet
 
 -- | Statement Grammar
 -- | ~stmt | External | x: = a + b | if (a == b) stmt1 stmt2
-data Stmt = Nop | External | String := Expr | If Expr Stmt Stmt 
+data Stmt = Nop | External | String := Expr | If Expr Stmt Stmt
           | Seq [Stmt]
           deriving (Show, Read,Eq)
 
 -- | General Language Rules
 -- | Comment: "/* */
--- | Reserved Words:  True | False | nop | if | then | else |end_if 
+-- | Reserved Words:  True | False | nop | if | then | else |end_if
 def :: GenLanguageDef String st Identity
 def = emptyDef{ commentStart = "/*"
               , commentEnd = "*/"
               , identStart = letter
               , identLetter = alphaNum <|> char '_'
               , nestedComments = False
-              , caseSensitive = True                             
+              , caseSensitive = True
               , opStart = oneOf "=<>@|OR&AND+-*/$MOD?isSet~NOT.CONCAT:XOR"
               , opLetter = oneOf "=<>@|OR&AND+-*/$MOD?isSet~NOT.CONCAT:XOR"
               , reservedOpNames = ["**",":=","NOT","~","*","/","MOD","CONCAT","**","+","-",">=","<=","<",">","=","<>","&","AND","OR","XOR","isSet",";"]
@@ -80,53 +94,53 @@ def = emptyDef{ commentStart = "/*"
 -- ========================Lexical Analysis===========================
 -- | Create specific parsers from the generic parser creator in Parsec
 sst_lexer :: GenTokenParser String u Identity
-sst_lexer = makeTokenParser def 
+sst_lexer = makeTokenParser def
 
 -- | Lex Parentheses
 sst_parens ::ParsecT String u Identity a -> ParsecT String u Identity a
-sst_parens      = parens sst_lexer   
+sst_parens      = parens sst_lexer
 
 -- | Lex Indentifiers
 sst_identifier :: ParsecT String u Identity String
-sst_identifier  = identifier   sst_lexer 
+sst_identifier  = identifier   sst_lexer
 
 -- | Lex Reserved Operators
 sst_reservedOp :: String -> ParsecT String u Identity ()
-sst_reservedOp  =  reservedOp   sst_lexer 
+sst_reservedOp  =  reservedOp   sst_lexer
 
 -- | Lex Reserved Keywords
 sst_reserved :: String -> ParsecT String u Identity ()
-sst_reserved = reserved     sst_lexer 
+sst_reserved = reserved     sst_lexer
 
 -- | Lex Semicolon
 sst_semiSep1 :: ParsecT String u Identity a -> ParsecT String u Identity [a]
-sst_semiSep1    =       semiSep1     sst_lexer 
+sst_semiSep1    =       semiSep1     sst_lexer
 
 
--- | Numeric Literals 
+-- | Numeric Literals
 sst_natural ::  ParsecT String u Identity Integer
-sst_natural     =       natural      sst_lexer 
+sst_natural     =       natural      sst_lexer
 
 sst_integer ::  ParsecT String u Identity Integer
-sst_integer     =       integer      sst_lexer 
+sst_integer     =       integer      sst_lexer
 
 sst_decimal ::  ParsecT String u Identity Integer
-sst_decimal     =       decimal      sst_lexer 
+sst_decimal     =       decimal      sst_lexer
 
 sst_octal ::  ParsecT String u Identity Integer
-sst_octal       =       octal        sst_lexer 
+sst_octal       =       octal        sst_lexer
 
 sst_hexadecimal ::  ParsecT String u Identity Integer
-sst_hexadecimal =       hexadecimal  sst_lexer 
+sst_hexadecimal =       hexadecimal  sst_lexer
 
-sst_double :: ParsecT String u Identity Double 
+sst_double :: ParsecT String u Identity Double
 sst_double = float sst_lexer
 
 sst_naturalOrDouble :: ParsecT String u Identity (Either Integer Double)
 sst_naturalOrDouble = naturalOrFloat sst_lexer
 
--- | String Literal 
-sst_stringLiteral :: ParsecT String u Identity String 
+-- | String Literal
+sst_stringLiteral :: ParsecT String u Identity String
 sst_stringLiteral = stringLiteral sst_lexer
 
 sst_charLiteral :: ParsecT String u Identity Char
@@ -134,31 +148,32 @@ sst_charLiteral = charLiteral sst_lexer
 
 -- | White Space
 sst_whiteSpace :: ParsecT String u Identity ()
-sst_whiteSpace  =  whiteSpace   sst_lexer  
+sst_whiteSpace  =  whiteSpace   sst_lexer
 
 -- ========================Statement Evaluation===========================
 evalStmt ::  VarTable -> Stmt -> Either String VarTable
 evalStmt v@ (VT _vt) (Seq lst) =  foldl' (\a b -> loop a b) (Right v) lst
                                 where loop :: Either String VarTable -> Stmt -> Either String VarTable
-                                      loop (Right vtable) s = evalStmt vtable s 
+                                      loop (Right vtable) s = evalStmt vtable s
                                       loop err _ = err
-                                
-evalStmt v st = insertToLut v st  -- st@(_s := e)
 
-evalStmt v@ (VT _vt) (If e s1 s2) = case evalExpr v e of 
-                                (Right (ConstBool True)) -> evalStmt v s1 
+-- evalStmt v st = insertToLut v st  -- st@(_s := e)
+evalStmt v st@ (_s := _e) = insertToLut v st
+
+evalStmt v@ (VT _vt) (If e s1 s2) = case evalExpr v e of
+                                (Right (ConstBool True)) -> evalStmt v s1
                                 (Right (ConstBool False)) -> evalStmt v s2
-                                (Right x) -> Left $ (show x) ++ " not a well formed bool"
+                                (Right x) -> Left $ show x ++ " not a well formed bool"
                                 (Left x) -> Left $ x ++ " not a well formed bool"
-evalStmt v (Nop) = Right v 
+evalStmt v (Nop) = Right v
 
 evalStmt _ _ = Left "Not Impremented"
 
-insertToLut :: VarTable -> Stmt -> Either String VarTable 
-insertToLut v@ (VT vt) (s := e) =  case evalExpr v e of 
+insertToLut :: VarTable -> Stmt -> Either String VarTable
+insertToLut v@ (VT vt) (s := e) =  case evalExpr v e of
                                 Left s' -> Left $ s' ++ "In insertToLut"
                                 Right c -> Right $ VT $ insert (pack s) c vt
-insertToLut vt ( _ ) = Left "Received other error in insertToLut"
+insertToLut _vt ( _ ) = Left "Received other error in insertToLut"
 
 
 -- ========================Expression Evaluation===========================
@@ -194,7 +209,7 @@ table = [ [Prefix (sst_reservedOp "~" >> return (Uno Not))]
         ]
 
 -- | Term parse each parser one by one
-term :: ParsecT String () Identity Expr        
+term :: ParsecT String () Identity Expr
 term = sst_parens exprparser
        <|> fmap Var sst_identifier
        <|> boolTParser
@@ -207,30 +222,30 @@ evalExpr :: VarTable -> Expr -> Either String Const
 evalExpr _ (Con x) = Right x
 
 -- Lookup Unary Operator
-evalExpr v (Duo op e1 e2) = do 
+evalExpr v (Duo op e1 e2) = do
     e1' <-   evalExpr v e1
     e2' <-   evalExpr v e2
     duopLookUp op  e1' e2'
 
 -- Lookup Binary Operator
-evalExpr v (Uno op e1) = do 
+evalExpr v (Uno op e1) = do
     e1' <-   evalExpr v e1
-    unopLookUp op  e1' 
+    unopLookUp op  e1'
 
-evalExpr v@ (VT vt) (Var s) = case lookup (pack s) vt of 
+evalExpr _v@ (VT vt) (Var s) = case lookup (pack s) vt of
                     Nothing -> Left $ "Does not Exist" ++ s
-                    (Just found) ->  Right $ found     
+                    (Just found) ->  Right found
 
 
--- | Unary Operators 
+-- | Unary Operators
 -- | Not Operator -> [~, NOT]
 unopLookUp :: Unop -> Const -> Either String Const
 unopLookUp (Not) (ConstBool b) = Right $ ConstBool $ not b
 unopLookUp (Not) (_) = Left "The expected variable or expression is not boolean"
 
 -- | Neg Operator -> [ - ]
-unopLookUp (Neg) (ConstInteger i) = Right $ ConstInteger $ (-i)
-unopLookUp (Neg) (ConstDouble d) = Right $ ConstDouble $ (-d)
+unopLookUp (Neg) (ConstInteger i) = Right $ ConstInteger (-i)
+unopLookUp (Neg) (ConstDouble d) = Right $ ConstDouble (-d)
 unopLookUp (Neg) (_) = Left "Expected Numeric Values such as Integer or Double"
 
 -- | Binary Operators
@@ -241,9 +256,9 @@ duopLookUp (Add) (ConstBool _ ) _ = Left "Expected Double or Integer, received B
 duopLookUp (Add) (ConstString _) _ = Left "Expected Double or Integer, received String First Argument"
 duopLookUp (Add) (ConstChar _) _ = Left "Expected Double or Integer, received Char First Argument"
 duopLookUp (Add) (ConstInteger i) (ConstInteger j) = Right $ ConstInteger $ i + j
-duopLookUp (Add) (ConstInteger i) (ConstDouble d) = Right $ ConstDouble $ (fromIntegral i) + d
+duopLookUp (Add) (ConstInteger i) (ConstDouble d) = Right $ ConstDouble $ fromIntegral i + d
 duopLookUp (Add) (ConstDouble d1) (ConstDouble d2) = Right $ ConstDouble $ d1 + d2
-duopLookUp (Add) (ConstDouble d) (ConstInteger i) = Right $ ConstDouble $ d + (fromIntegral i)
+duopLookUp (Add) (ConstDouble d) (ConstInteger i) = Right $ ConstDouble $ d + fromIntegral i
 duopLookUp (Add) (_) (ConstBool _) = Left "Expected Double or Integer, received Bool Second Argument"
 duopLookUp (Add) (_) (ConstString _) = Left "Expected Double or Integer, received String Second Argument"
 duopLookUp (Add) (_) (ConstChar _) = Left "Expected Double or Integer, received Char Second Argument"
@@ -253,9 +268,9 @@ duopLookUp (Sub) (ConstBool _ ) _ = Left "Expected Double or Integer, received B
 duopLookUp (Sub) (ConstString _) _ = Left "Expected Double or Integer, received String First Argument"
 duopLookUp (Sub) (ConstChar _) _ = Left "Expected Double or Integer, received Char First Argument"
 duopLookUp (Sub) (ConstInteger i) (ConstInteger j) = Right $ ConstInteger $ i - j
-duopLookUp (Sub) (ConstInteger i) (ConstDouble d) = Right $ ConstDouble $ (fromIntegral i) - d
+duopLookUp (Sub) (ConstInteger i) (ConstDouble d) = Right $ ConstDouble $ fromIntegral i - d
 duopLookUp (Sub) (ConstDouble d1) (ConstDouble d2) = Right $ ConstDouble $ d1 - d2
-duopLookUp (Sub) (ConstDouble d) (ConstInteger i) = Right $ ConstDouble $ d - (fromIntegral i)
+duopLookUp (Sub) (ConstDouble d) (ConstInteger i) = Right $ ConstDouble $ d - fromIntegral i
 duopLookUp (Sub) (_) (ConstBool _) = Left "Expected Double or Integer, received Bool Second Argument"
 duopLookUp (Sub) (_) (ConstString _) = Left "Expected Double or Integer, received String Second Argument"
 duopLookUp (Sub) (_) (ConstChar _) = Left "Expected Double or Integer, received Char Second Argument"
@@ -265,14 +280,14 @@ duopLookUp (Mul) (ConstBool _ ) _ = Left "Expected Double or Integer, received B
 duopLookUp (Mul) (ConstString _) _ = Left "Expected Double or Integer, received String First Argument"
 duopLookUp (Mul) (ConstChar _) _ = Left "Expected Double or Integer, received Char First Argument"
 duopLookUp (Mul) (ConstInteger i) (ConstInteger j) = Right $ ConstInteger $ i * j
-duopLookUp (Mul) (ConstInteger i) (ConstDouble d) = Right $ ConstDouble $ (fromIntegral i) * d
+duopLookUp (Mul) (ConstInteger i) (ConstDouble d) = Right $ ConstDouble $ fromIntegral i * d
 duopLookUp (Mul) (ConstDouble d1) (ConstDouble d2) = Right $ ConstDouble $ d1 * d2
-duopLookUp (Mul) (ConstDouble d) (ConstInteger i) = Right $ ConstDouble $ d * (fromIntegral i)
+duopLookUp (Mul) (ConstDouble d) (ConstInteger i) = Right $ ConstDouble $ d * fromIntegral i
 duopLookUp (Mul) (_) (ConstBool _) = Left "Expected Double or Integer, received Bool Second Argument"
 duopLookUp (Mul) (_) (ConstString _) = Left "Expected Double or Integer, received String Second Argument"
 duopLookUp (Mul) (_) (ConstChar _) = Left "Expected Double or Integer, received Char Second Argument"
 
--- | Division Operator -> [ / ] 
+-- | Division Operator -> [ / ]
 duopLookUp (Div) (ConstBool _ ) _ = Left "Expected Double or Integer, received Bool First Argument"
 duopLookUp (Div) (ConstString _) _ = Left "Expected Double or Integer, received String First Argument"
 duopLookUp (Div) (ConstChar _) _ = Left "Expected Double or Integer, received Char First Argument"
@@ -282,14 +297,14 @@ duopLookUp (Div) (_) (ConstChar _) = Left "Expected Double or Integer, received 
 
 -- Divided Zero Error handling
 duopLookUp (Div) x y
-  |y == (ConstDouble 0)  =  Left $ "Divide by zero error"
-  |y == (ConstInteger 0) =  Left $ "Divide by zero error"
+  |y == ConstDouble 0  =  Left "Divide by zero error"
+  |y == ConstInteger 0 =  Left "Divide by zero error"
   |otherwise =duopLookUpDiv (Div) x y
     where
       duopLookUpDiv (Div) (ConstInteger i) (ConstInteger j) = Right $ ConstInteger $ quot i j
-      duopLookUpDiv (Div) (ConstInteger i) (ConstDouble d)  =  Right $ ConstDouble $ (fromIntegral i) / d
+      duopLookUpDiv (Div) (ConstInteger i) (ConstDouble d)  =  Right $ ConstDouble $ fromIntegral i / d
       duopLookUpDiv (Div) (ConstDouble d1) (ConstDouble d2) = Right $ ConstDouble $ d1 / d2
-      duopLookUpDiv (Div) (ConstDouble d) (ConstInteger i) = Right $ ConstDouble $ d / (fromIntegral i)
+      duopLookUpDiv (Div) (ConstDouble d) (ConstInteger i) = Right $ ConstDouble $ d / fromIntegral i
 
 -- | Modular Operator -> [ MOD ]
 duopLookUp (Mod) (ConstBool _ ) _ = Left "Expected Double or Integer, received Bool First Argument"
@@ -301,17 +316,16 @@ duopLookUp (Mod) (_) (ConstChar _) = Left "Expected Double or Integer, received 
 
 -- Mod Zero Error handling
 duopLookUp (Mod) x y
-  |y == (ConstDouble 0)  =  Left $ "Divide by zero error"
-  |y == (ConstInteger 0) =  Left $ "Divide by zero error"
-  |otherwise =duopLookUpMod (Mod) x y
+  |y == ConstDouble 0  =  Left "Divide by zero error"
+  |y == ConstInteger 0 =  Left "Divide by zero error"
+  |otherwise =duopLookUpMod Mod x y
     where
       duopLookUpMod (Mod) (ConstInteger i) (ConstInteger j) = Right $ ConstInteger $ rem i j
-      --duopLookUpMod (Mod) (ConstDouble i) (ConstDouble j) = Right $ ConstDouble $ rem i j
       duopLookUpMod (Mod) (_) (_)  =  Left $ "Error, Expected two Integer types"
 
 -- | Concat Operator -> [ CONCAT]
-duopLookUp (Concat) (ConstString s ) a = Right $ ConstString $ s ++ (show a)
-duopLookUp (Concat) a (ConstString s)  = Right $ ConstString $ s ++ (show a)
+duopLookUp (Concat) (ConstString s ) a = Right $ ConstString $ s ++ show a
+duopLookUp (Concat) a (ConstString s)  = Right $ ConstString $ s ++ show a
 duopLookUp (Concat) (_) (_) = Left "The inputs cannot concatenate, either one need to be a string"
 
 -- | Exponent Operator -> [ ** ]
@@ -327,8 +341,8 @@ duopLookUp (Equal) (ConstBool b1) (ConstBool b2) = Right $ ConstBool $ b1 == b2
 duopLookUp (Equal) (ConstString s1) (ConstString s2) = Right $ ConstBool $ s1 == s2
 duopLookUp (Equal) (ConstChar c1) (ConstChar c2) = Right $ ConstBool $ c1 == c2
 duopLookUp (Equal) (ConstInteger i1) (ConstInteger i2) = Right $ ConstBool $ i1 == i2
-duopLookUp (Equal) (ConstInteger i) (ConstDouble d) = Right $ ConstBool $ (fromIntegral i) == d
-duopLookUp (Equal) (ConstDouble d) (ConstInteger i) = Right $ ConstBool $ d == (fromIntegral i)
+duopLookUp (Equal) (ConstInteger i) (ConstDouble d) = Right $ ConstBool $ fromIntegral i == d
+duopLookUp (Equal) (ConstDouble d) (ConstInteger i) = Right $ ConstBool $ d == fromIntegral i
 duopLookUp (Equal) (ConstDouble d1) (ConstDouble d2) = Right $ ConstBool $ d1 == d2
 duopLookUp (Equal) (_) (_) = Left "The two variables are not comparable"
 
@@ -337,8 +351,8 @@ duopLookUp (Greater) (ConstBool b1) (ConstBool b2) = Right $ ConstBool $ b1 > b2
 duopLookUp (Greater) (ConstString s1) (ConstString s2) = Right $ ConstBool $ s1 > s2
 duopLookUp (Greater) (ConstChar c1) (ConstChar c2) = Right $ ConstBool $ c1 > c2
 duopLookUp (Greater) (ConstInteger i1) (ConstInteger i2) = Right $ ConstBool $ i1 > i2
-duopLookUp (Greater) (ConstInteger i) (ConstDouble d) = Right $ ConstBool $ (fromIntegral i) > d
-duopLookUp (Greater) (ConstDouble d) (ConstInteger i) = Right $ ConstBool $ d > (fromIntegral i)
+duopLookUp (Greater) (ConstInteger i) (ConstDouble d) = Right $ ConstBool $ fromIntegral i > d
+duopLookUp (Greater) (ConstDouble d) (ConstInteger i) = Right $ ConstBool $ d > fromIntegral i
 duopLookUp (Greater) (ConstDouble d1) (ConstDouble d2) = Right $ ConstBool $ d1 > d2
 duopLookUp (Greater) (_) (_) = Left "The two variables are not comparable"
 
@@ -347,8 +361,8 @@ duopLookUp (Less) (ConstBool b1) (ConstBool b2) = Right $ ConstBool $ b1 < b2
 duopLookUp (Less) (ConstString s1) (ConstString s2) = Right $ ConstBool $ s1 < s2
 duopLookUp (Less) (ConstChar c1) (ConstChar c2) = Right $ ConstBool $ c1 < c2
 duopLookUp (Less) (ConstInteger i1) (ConstInteger i2) = Right $ ConstBool $ i1 < i2
-duopLookUp (Less) (ConstInteger i) (ConstDouble d) = Right $ ConstBool $ (fromIntegral i) < d
-duopLookUp (Less) (ConstDouble d) (ConstInteger i) = Right $ ConstBool $ d < (fromIntegral i)
+duopLookUp (Less) (ConstInteger i) (ConstDouble d) = Right $ ConstBool $ fromIntegral i < d
+duopLookUp (Less) (ConstDouble d) (ConstInteger i) = Right $ ConstBool $ d < fromIntegral i
 duopLookUp (Less) (ConstDouble d1) (ConstDouble d2) = Right $ ConstBool $ d1 < d2
 duopLookUp (Less) (_) (_) = Left "The two variables are not comparable"
 
@@ -357,8 +371,8 @@ duopLookUp (GreaterEqual) (ConstBool b1) (ConstBool b2) = Right $ ConstBool $ b1
 duopLookUp (GreaterEqual) (ConstString s1) (ConstString s2) = Right $ ConstBool $ s1 >= s2
 duopLookUp (GreaterEqual) (ConstChar c1) (ConstChar c2) = Right $ ConstBool $ c1 >= c2
 duopLookUp (GreaterEqual) (ConstInteger i1) (ConstInteger i2) = Right $ ConstBool $ i1 >= i2
-duopLookUp (GreaterEqual) (ConstInteger i) (ConstDouble d) = Right $ ConstBool $ (fromIntegral i) >= d
-duopLookUp (GreaterEqual) (ConstDouble d) (ConstInteger i) = Right $ ConstBool $ d >= (fromIntegral i)
+duopLookUp (GreaterEqual) (ConstInteger i) (ConstDouble d) = Right $ ConstBool $ fromIntegral i >= d
+duopLookUp (GreaterEqual) (ConstDouble d) (ConstInteger i) = Right $ ConstBool $ d >= fromIntegral i
 duopLookUp (GreaterEqual) (ConstDouble d1) (ConstDouble d2) = Right $ ConstBool $ d1 >= d2
 duopLookUp (GreaterEqual) (_) (_) = Left "The two variables are not comparable"
 
@@ -367,8 +381,8 @@ duopLookUp (LessEqual) (ConstBool b1) (ConstBool b2) = Right $ ConstBool $ b1 <=
 duopLookUp (LessEqual) (ConstString s1) (ConstString s2) = Right $ ConstBool $ s1 <= s2
 duopLookUp (LessEqual) (ConstChar c1) (ConstChar c2) = Right $ ConstBool $ c1 <= c2
 duopLookUp (LessEqual) (ConstInteger i1) (ConstInteger i2) = Right $ ConstBool $ i1 < i2
-duopLookUp (LessEqual) (ConstInteger i) (ConstDouble d) = Right $ ConstBool $ (fromIntegral i) <= d
-duopLookUp (LessEqual) (ConstDouble d) (ConstInteger i) = Right $ ConstBool $ d <= (fromIntegral i)
+duopLookUp (LessEqual) (ConstInteger i) (ConstDouble d) = Right $ ConstBool $ fromIntegral i <= d
+duopLookUp (LessEqual) (ConstDouble d) (ConstInteger i) = Right $ ConstBool $ d <= fromIntegral i
 duopLookUp (LessEqual) (ConstDouble d1) (ConstDouble d2) = Right $ ConstBool $ d1 <= d2
 duopLookUp (LessEqual) (_) (_) = Left "The two variables are not comparable"
 
@@ -377,60 +391,60 @@ duopLookUp (NotEqual) (ConstBool b1) (ConstBool b2) = Right $ ConstBool $ b1 /= 
 duopLookUp (NotEqual) (ConstString s1) (ConstString s2) = Right $ ConstBool $ s1 /= s2
 duopLookUp (NotEqual) (ConstChar c1) (ConstChar c2) = Right $ ConstBool $ c1 /= c2
 duopLookUp (NotEqual) (ConstInteger i1) (ConstInteger i2) = Right $ ConstBool $ i1 /= i2
-duopLookUp (NotEqual) (ConstInteger i) (ConstDouble d) = Right $ ConstBool $ (fromIntegral i) /= d
-duopLookUp (NotEqual) (ConstDouble d) (ConstInteger i) = Right $ ConstBool $ d /= (fromIntegral i)
+duopLookUp (NotEqual) (ConstInteger i) (ConstDouble d) = Right $ ConstBool $ fromIntegral i /= d
+duopLookUp (NotEqual) (ConstDouble d) (ConstInteger i) = Right $ ConstBool $ d /= fromIntegral i
 duopLookUp (NotEqual) (ConstDouble d1) (ConstDouble d2) = Right $ ConstBool $ d1 /= d2
 duopLookUp (NotEqual) (_) (_) = Left "The two variables are not comparable"
 
 -- ==Relational Operators==
 -- | And Relations
 duopLookUp (And) (ConstBool b1) (ConstBool b2) = Right $ ConstBool $ b1 && b2
-duopLookUp (And) (ConstChar c1) (ConstChar c2) = Right $ ConstChar $ toEnum $ (fromEnum c1) .&. (fromEnum c2) 
-duopLookUp (And) (ConstInteger i1) (ConstInteger i2) = Right $ ConstInteger $ toEnum $ (fromEnum i1) .&. (fromEnum i2)
+duopLookUp (And) (ConstChar c1) (ConstChar c2) = Right $ ConstChar $ toEnum $ fromEnum c1 .&. fromEnum c2
+duopLookUp (And) (ConstInteger i1) (ConstInteger i2) = Right $ ConstInteger $ toEnum $ fromEnum i1 .&. fromEnum i2
 duopLookUp (And) (_) (_) = Left "The two variables or expressions are not comparable"
 
 -- | Or Relations
 duopLookUp (Or) (ConstBool b1) (ConstBool b2) = Right $ ConstBool $ b1 || b2
-duopLookUp (Or) (ConstChar c1) (ConstChar c2) = Right $ ConstChar $ toEnum $ (fromEnum c1) .|. (fromEnum c2)
-duopLookUp (Or) (ConstInteger i1) (ConstInteger i2) = Right $ ConstInteger $ toEnum $ (fromEnum i1) .|. (fromEnum i2)
+duopLookUp (Or) (ConstChar c1) (ConstChar c2) = Right $ ConstChar $ toEnum $ fromEnum c1 .|. fromEnum c2
+duopLookUp (Or) (ConstInteger i1) (ConstInteger i2) = Right $ ConstInteger $ toEnum $ fromEnum i1 .|. fromEnum i2
 duopLookUp (Or) (_) (_) = Left "The two variables or expressions are not comparable"
 
 -- | XOr Relations
 duopLookUp (XOr) (ConstBool b1) (ConstBool b2) = Right $ ConstBool $  not (b1 || b2)
-duopLookUp (XOr) (ConstChar c1) (ConstChar c2) = Right $ ConstChar $ toEnum $ (fromEnum c1) `xor` (fromEnum c2)
-duopLookUp (XOr) (ConstInteger i1) (ConstInteger i2) = Right $ ConstInteger $ toEnum $ (fromEnum i1) `xor` (fromEnum i2)
+duopLookUp (XOr) (ConstChar c1) (ConstChar c2) = Right $ ConstChar $ toEnum $ fromEnum c1 `xor` fromEnum c2
+duopLookUp (XOr) (ConstInteger i1) (ConstInteger i2) = Right $ ConstInteger $ toEnum $ fromEnum i1 `xor` fromEnum i2
 duopLookUp (XOr) (_) (_) = Left "The two variables or expressions are not comparable"
 
 -- | IsSet Function
-duopLookUp (IsSet) (ConstChar c1) (ConstInteger i) = Right $ ConstBool $ (fromEnum c1) `testBit` (fromEnum i)
-duopLookUp (IsSet) (ConstInteger i1) (ConstInteger i2) = Right $ ConstBool $ (fromEnum i1) `testBit` (fromEnum i2)
+duopLookUp (IsSet) (ConstChar c1) (ConstInteger i) = Right $ ConstBool $ fromEnum c1 `testBit` fromEnum i
+duopLookUp (IsSet) (ConstInteger i1) (ConstInteger i2) = Right $ ConstBool $ fromEnum i1 `testBit` fromEnum i2
 duopLookUp (IsSet) (_) (_) = Left "The two variables or expressions are not comparable"
 
 -- ========================Parse Terms===========================
 -- | Parse Boolean
 boolTParser :: ParsecT String t Identity Expr
-boolTParser = (sst_reserved "True" >> return (Con (ConstBool True)))
+boolTParser = sst_reserved "True" >> return (Con (ConstBool True))
 boolFParser :: ParsecT String t Identity Expr
-boolFParser = (sst_reserved "False" >> return (Con (ConstBool False)))
+boolFParser = sst_reserved "False" >> return (Con (ConstBool False))
 
 -- | Parses any integer type constant to an Integer
 intParser :: ParsecT String u Identity Expr
-intParser = (sst_natural >>= (\x -> return (Con (ConstInteger x)))) 
-            <|> (sst_integer >>= (\x -> return (Con (ConstInteger x)))) 
-            <|> (sst_decimal >>= (\x -> return (Con (ConstInteger x))))                        
+intParser = (sst_natural >>= (\x -> return (Con (ConstInteger x))))
+            <|> (sst_integer >>= (\x -> return (Con (ConstInteger x))))
+            <|> (sst_decimal >>= (\x -> return (Con (ConstInteger x))))
             <|> (sst_hexadecimal >>= (\x -> return (Con (ConstInteger x))))
             <|> (sst_octal >>= (\x -> return (Con (ConstInteger x))))
 
 -- | Parses either an integer or a Double into a Integer or Double
 naturalOrDoubleParser :: ParsecT String  u Identity Expr
-naturalOrDoubleParser = (sst_naturalOrDouble >>= (\x ->return $ makeNum x))
+naturalOrDoubleParser = sst_naturalOrDouble >>= (\x ->return . makeNum $ x)
                         where makeNum = either makeConstInt makeConstDouble
-                              makeConstInt = (Con).(ConstInteger)
-                              makeConstDouble = (Con).(ConstDouble)
+                              makeConstInt = Con . ConstInteger
+                              makeConstDouble = Con . ConstDouble
 
 -- | Parses any string type constant to an String
 stringParser :: ParsecT String u Identity Expr
-stringParser = (sst_stringLiteral >>= (\x -> return (Con (ConstString x))))
+stringParser = sst_stringLiteral >>= (\x -> return (Con (ConstString x)))
 
 -- | Parses any char type constant to an Char
 charParser :: ParsecT String u Identity Expr
@@ -460,8 +474,10 @@ mainparser = sst_whiteSpace >> stmtparser <* eof
               <|> return Nop
 
 -- ========================Test String===========================
-testString = "x:= input1; y:= input2; b1:= True; b2:= False; set:= 0 isSet 4;/*c1:= \"c\"; c2:= \"2\"; c3:= c1 AND c2;*/ i3:= x XOR y; s1:= \"This is a test program.\"; if (~(b1 XOR b2) && (x > 7)) then z:= x - (-x MOD y) ; s2:= \"The result is \" CONCAT z ; else z:= y;end_if/*; x:=y */; output:= z"
+testString :: String
+testString = "x:= input1; y:= input2; b1:= True; b2:= False; set:= 0 isSet 4;/*c1:= \"c\"; c2:= \"2\"; c3:= c1 AND c2;*/ i3:= x XOR y; s1:= \"This is a test program.\"; if (~(b1 XOR b2) && (x > 7)) then z:= x - (-x MOD y) ; s2:= \"The result is \" CONCAT z ; else z:= y;end_if/*; x:=y */; output:= z" :: String
 
+testList :: [Const]
 testList = ConstInteger <$> [18,7]
 
 -- ========================Intergration Function=================
@@ -484,7 +500,7 @@ run str = case parse mainparser "" str of
 -- | Intergration for Parse, return an Either String or Stmt Type
 sstParse :: String -> Either String Stmt
 sstParse s = case parse mainparser "" s of
-        Left e -> Left $ show e 
+        Left e -> Left $ show e
         Right r -> Right r
 
 -- | Intergration for Evaluation of syntax, return an Either String or VarTable Type
@@ -495,23 +511,23 @@ sstEval vt stmt = case evalStmt vt stmt of
 
 -- | Lookup output parameter from VarTable, return Either String or Const Type
 sstLookupOutput :: VarTable -> Either String Const
-sstLookupOutput (VT vt) = case lookup "output" vt of 
-	Nothing -> Left $ "Parameter output is empty."
-	(Just result) -> Right result	
+sstLookupOutput (VT vt) = case lookup "output" vt of
+	Nothing -> Left "Parameter output is empty."
+	(Just result) -> Right result
 
 -- | Test function sst, parse everything and returns an output
 -- sst = sstLookupOutput =<< (evalStmt emptyVTable =<< sstParse testString)
 
 -- | Insert input into the script from a list of data
 sstInsertInput :: [Const] -> Either String VarTable
-sstInsertInput lst = Right $ VT $ foldl' (\a ((i,b)) -> insert ("input" ++ (show i) ) b a) empty (zip [1 .. ] lst)
+sstInsertInput lst = Right $ VT $ foldl' (\a ((i,b)) -> insert ("input" ++ show i ) b a) empty (zip [1 .. ] lst)
 
 sstInsertInputVector :: V.Vector Const -> Either String VarTable
 sstInsertInputVector v = Right $ VT $ V.ifoldl' iFoldFcn empty v
-  where iFoldFcn a i b = insert ("input" ++ (show i)) b a 
+  where iFoldFcn a i b = insert ("input" ++ show i) b a
 
 -- | Intergration Test Function for inserting a list of data and parse into a certain output
-{- | sstTest2 = do 
+{- | sstTest2 = do
 	vt <- sstInsertInput testList
 	sstParse testString >>= sstEval vt >>= sstLookupOutput
 |-}
@@ -524,8 +540,8 @@ sstTest lst s = do
     case sstLookupOutput result of
             Left e -> Left $ show e
             Right r -> Right r
-	 
-        
+
+
 
 
 
