@@ -14,14 +14,13 @@ Portability :  portable
 {-# LANGUAGE OverloadedStrings #-}
 module Language.StructuredScript.Parsers where
 -- Genearl
-import           ClassyPrelude         hiding (empty, insert, lookup, (<|>))
+import           ClassyPrelude         hiding (empty, insert, lookup, (<|>), foldl')
 import           Data.Functor.Identity
 -- Data Container
 import           Data.Bits
 import           Data.HashMap.Lazy     hiding (foldl')
 import           Data.List             (foldl')
 import qualified Data.Vector           as V
--- Text Parser
 import           Text.Parsec
 import           Text.Parsec.Expr
 import           Text.Parsec.Language
@@ -520,11 +519,13 @@ sstLookupOutput (VT vt) = case lookup "output" vt of
 
 -- | Insert input into the script from a list of data
 sstInsertInput :: [Const] -> Either String VarTable
-sstInsertInput lst = Right $ VT $ foldl' (\a ((i,b)) -> insert ("input" ++ show i ) b a) empty (zip [1 .. ] lst)
+sstInsertInput lst = Right $ VT $ foldl' (\a ((i,b)) -> insert ("input" <> pack (show i)) b a)
+                                                               empty
+                                                               (zip [1 .. ] lst)
 
 sstInsertInputVector :: V.Vector Const -> Either String VarTable
 sstInsertInputVector v = Right $ VT $ V.ifoldl' iFoldFcn empty v
-  where iFoldFcn a i b = insert ("input" ++ show i) b a
+  where iFoldFcn a i b = insert ("input" <> pack (show i)) b a
 
 -- | Intergration Test Function for inserting a list of data and parse into a certain output
 {- | sstTest2 = do

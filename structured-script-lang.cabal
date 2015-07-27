@@ -1,6 +1,6 @@
 
 Name:                   structured-script-lang
-Version:                0.1.7
+Version:                0.2.0
 Author:                 Scott Murphy<scottmurphy09@gmail.com>
 Maintainer:             Scott Murphy<scottmurphy09@gmail.com>
 License:                BSD3
@@ -17,11 +17,11 @@ Library
                         Language.StructuredScript.Parsers
 
   Other-Modules:        Language.StructuredScript.Internal
-  Build-Depends:         base                     >= 4         &&   < 5
-                       , classy-prelude           >= 0.5.6     &&   < 0.5.11
-                       , transformers             >= 0.3.0.0
-                       , parsec                   >= 3.1.3     &&   < 3.2.0
-                       , vector                   >= 0.10.9.1
+  Build-Depends:         base                  >= 4         &&   < 5
+                       , classy-prelude           
+                       , transformers 
+                       , parsec       
+                       , vector       
                        , unordered-containers
 
 Test-Suite spec
@@ -31,9 +31,9 @@ Test-Suite spec
                         ,src    
   Ghc-Options:          -Wall
   Main-Is:              Spec.hs
-  Build-Depends:        base
+  Build-Depends:        base                   >= 4         &&   < 5
                       , hspec
-                      , classy-prelude >= 0.5.6     &&   < 0.5.11
+                      , classy-prelude
                       , transformers         
                       , parsec               
                       , vector               
@@ -43,8 +43,8 @@ Test-Suite spec
 Executable structured-script-lang
     main-is:            Main.hs
     HS-Source-Dirs:     src
-    build-depends:      base
-                      , classy-prelude >= 0.5.6     &&   < 0.5.11
+    build-depends:      base                   >= 4         &&   < 5
+                      , classy-prelude
                                           
     ghc-options:      -threaded -O2 -rtsopts
 
