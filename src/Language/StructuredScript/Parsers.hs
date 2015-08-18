@@ -12,10 +12,10 @@ Portability :  portable
 -}
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE GADTs             #-}
 module Language.StructuredScript.Parsers where
 -- Genearl
-import           ClassyPrelude         hiding (empty, insert, lookup, (<|>), foldl')
-import           Data.Functor.Identity
+import           ClassyPrelude         hiding (lookup, (<|>), foldl')
 -- Data Container
 import           Data.Bits
 import           Data.HashMap.Lazy     hiding (foldl')
@@ -64,7 +64,7 @@ data Unop = Not | Neg deriving (Show,Eq,Read)
 -- | Arithmetic Operators -> [+, * , /, -, MOD]
 data Duop = And | Or | XOr | IsSet
            | Greater | Less | Equal | GreaterEqual | LessEqual | NotEqual
-	   | Add | Mul | Div | Sub | Mod | Concat | Pow
+           | Add | Mul | Div | Sub | Mod | Concat | Pow
            deriving (Read, Show,Eq)
 
 -- | Statement Grammar
@@ -184,27 +184,27 @@ exprparser = buildExpressionParser table term <?> "expression"
 -- | Operators Syntax Table Construction
 table :: [[Operator String u Identity Expr]]
 table = [ [Prefix (sst_reservedOp "~" >> return (Uno Not))]
-	, [Prefix (sst_reservedOp "NOT" >> return (Uno Not))]
-	, [Prefix (sst_reservedOp "-" >> return (Uno Neg))]
+        , [Prefix (sst_reservedOp "NOT" >> return (Uno Not))]
+        , [Prefix (sst_reservedOp "-" >> return (Uno Neg))]
         , [Infix (sst_reservedOp "&&" >> return (Duo And)) AssocLeft]
-	, [Infix (sst_reservedOp "AND" >> return (Duo And)) AssocLeft]
+        , [Infix (sst_reservedOp "AND" >> return (Duo And)) AssocLeft]
         , [Infix (sst_reservedOp "||" >> return (Duo Or)) AssocLeft]
-	, [Infix (sst_reservedOp "OR" >> return (Duo Or)) AssocLeft]
-	, [Infix (sst_reservedOp "XOR" >> return (Duo XOr)) AssocLeft]
-	 ,[Infix (sst_reservedOp "isSet" >> return (Duo IsSet)) AssocLeft]
+        , [Infix (sst_reservedOp "OR" >> return (Duo Or)) AssocLeft]
+        , [Infix (sst_reservedOp "XOR" >> return (Duo XOr)) AssocLeft]
+         ,[Infix (sst_reservedOp "isSet" >> return (Duo IsSet)) AssocLeft]
         , [Infix (sst_reservedOp "==" >> return (Duo Equal)) AssocLeft]
         , [Infix (sst_reservedOp "+" >> return (Duo Add)) AssocLeft]
         , [Infix (sst_reservedOp "-" >> return (Duo Sub)) AssocLeft]
         , [Infix (sst_reservedOp "*" >> return (Duo Mul)) AssocLeft]
-	, [Infix (sst_reservedOp "**" >> return (Duo Pow)) AssocLeft]
+        , [Infix (sst_reservedOp "**" >> return (Duo Pow)) AssocLeft]
         , [Infix (sst_reservedOp "/" >> return (Duo Div)) AssocLeft]
         , [Infix (sst_reservedOp "MOD" >> return (Duo Mod)) AssocLeft]
-	, [Infix (sst_reservedOp "CONCAT" >> return (Duo Concat)) AssocLeft]
+        , [Infix (sst_reservedOp "CONCAT" >> return (Duo Concat)) AssocLeft]
         , [Infix (sst_reservedOp ">" >> return (Duo Greater)) AssocLeft]
         , [Infix (sst_reservedOp "<" >> return (Duo Less)) AssocLeft]
-	, [Infix (sst_reservedOp ">=" >> return (Duo GreaterEqual)) AssocLeft]
+        , [Infix (sst_reservedOp ">=" >> return (Duo GreaterEqual)) AssocLeft]
         , [Infix (sst_reservedOp "<=" >> return (Duo LessEqual)) AssocLeft]
-	, [Infix (sst_reservedOp "<>" >> return (Duo NotEqual)) AssocLeft]
+        , [Infix (sst_reservedOp "<>" >> return (Duo NotEqual)) AssocLeft]
         ]
 
 -- | Term parse each parser one by one
@@ -304,6 +304,7 @@ duopLookUp (Div) x y
       duopLookUpDiv (Div) (ConstInteger i) (ConstDouble d)  =  Right $ ConstDouble $ fromIntegral i / d
       duopLookUpDiv (Div) (ConstDouble d1) (ConstDouble d2) = Right $ ConstDouble $ d1 / d2
       duopLookUpDiv (Div) (ConstDouble d) (ConstInteger i) = Right $ ConstDouble $ d / fromIntegral i
+      duopLookUpDiv _ _ _ = Left $ "Not Implemented"
 
 -- | Modular Operator -> [ MOD ]
 duopLookUp (Mod) (ConstBool _ ) _ = Left "Expected Double or Integer, received Bool First Argument"
@@ -321,6 +322,7 @@ duopLookUp (Mod) x y
     where
       duopLookUpMod (Mod) (ConstInteger i) (ConstInteger j) = Right $ ConstInteger $ rem i j
       duopLookUpMod (Mod) (_) (_)  =  Left $ "Error, Expected two Integer types"
+      duopLookUpMod _ _ _ = Left $ "Not Implemented"
 
 -- | Concat Operator -> [ CONCAT]
 duopLookUp (Concat) (ConstString s ) a = Right $ ConstString $ s ++ show a
@@ -492,8 +494,8 @@ play inp = case parse mainparser "" inp of
 -- | Takes a string and returns an Stmt Type output
 run :: String -> Stmt
 run str = case parse mainparser "" str of
-    	Left e  -> error $ show e
-    	Right r -> r
+        Left e  -> error $ show e
+        Right r -> r
 |-}
 
 -- | Intergration for Parse, return an Either String or Stmt Type
@@ -505,14 +507,14 @@ sstParse s = case parse mainparser "" s of
 -- | Intergration for Evaluation of syntax, return an Either String or VarTable Type
 sstEval :: VarTable -> Stmt -> Either String VarTable
 sstEval vt stmt = case evalStmt vt stmt of
-	Left e -> Left $ show e
-	Right r -> Right r
+        Left e -> Left $ show e
+        Right r -> Right r
 
 -- | Lookup output parameter from VarTable, return Either String or Const Type
 sstLookupOutput :: VarTable -> Either String Const
 sstLookupOutput (VT vt) = case lookup "output" vt of
-	Nothing -> Left "Parameter output is empty."
-	(Just result) -> Right result
+        Nothing -> Left "Parameter output is empty."
+        (Just result) -> Right result
 
 -- | Test function sst, parse everything and returns an output
 -- sst = sstLookupOutput =<< (evalStmt emptyVTable =<< sstParse testString)
@@ -521,7 +523,7 @@ sstLookupOutput (VT vt) = case lookup "output" vt of
 sstInsertInput :: [Const] -> Either String VarTable
 sstInsertInput lst = Right $ VT $ foldl' (\a ((i,b)) -> insert ("input" <> pack (show i)) b a)
                                                                empty
-                                                               (zip [1 .. ] lst)
+                                                               (zip ([1 .. ] :: [Integer]) lst)
 
 sstInsertInputVector :: V.Vector Const -> Either String VarTable
 sstInsertInputVector v = Right $ VT $ V.ifoldl' iFoldFcn empty v
@@ -529,8 +531,8 @@ sstInsertInputVector v = Right $ VT $ V.ifoldl' iFoldFcn empty v
 
 -- | Intergration Test Function for inserting a list of data and parse into a certain output
 {- | sstTest2 = do
-	vt <- sstInsertInput testList
-	sstParse testString >>= sstEval vt >>= sstLookupOutput
+        vt <- sstInsertInput testList
+        sstParse testString >>= sstEval vt >>= sstLookupOutput
 |-}
 
 sstTest :: [Const]-> String -> Either String Const
