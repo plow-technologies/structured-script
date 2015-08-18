@@ -9,6 +9,7 @@ dependencies:
 
   cache_directories:
     - .cabal-sandbox
+    - ~/.cabal/bin 
     - dist
 
   override:
