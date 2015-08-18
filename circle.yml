@@ -13,6 +13,8 @@ dependencies:
     - dist
 
   override:
+    - "if [ ! -f /home/ubuntu/.cabal/config ]; then cabal update && echo remote-repo: hackage.plowtech.net:http://hackage.plowtech.net/packages/archive >> ~/.cabal/config; else echo .cabal/config file already exists; fi"
+    - cabal update
     - if cabal --version | grep 1.23.0.0; then echo "Version 1.23.0.0"; else cd ~/ && git clone https://github.com/plow-technologies/cabal.git && cd cabal && cabal --no-require-sandbox install -j2 Cabal/ cabal-install/; fi
     - cabal sandbox init
     - git clone git@github.com:plow-technologies/plow-scripts.git
@@ -27,7 +29,7 @@ test:
         timeout: 3000
     - cabal test --show-details=always:
         timeout: 3000
-
+	
 deployment:
   staging:
     branch: master
