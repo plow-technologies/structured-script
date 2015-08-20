@@ -17,7 +17,7 @@ dependencies:
     - if cabal --version | grep 1.23.0.0; then echo "Version 1.23.0.0"; else cd ~/ && git clone https://github.com/plow-technologies/cabal.git && cd cabal && cabal --no-require-sandbox install -j2 Cabal/ cabal-install/; fi
     - git clone git@github.com:plow-technologies/plow-scripts.git
     - cp plow-scripts/config $HOME/.cabal/config
-    - cp plow-scripts/cabal.config-lts-3.1 ./
+    - cp plow-scripts/cabal.config-lts-3.1 ./cabal.config
     - cabal sandbox init
     - cabal update
     - cabal install --only-dependencies -j2 --enable-tests
