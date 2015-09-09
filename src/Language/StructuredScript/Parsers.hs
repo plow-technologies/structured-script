@@ -64,7 +64,7 @@ data Unop = Not | Neg deriving (Show,Eq,Read)
 -- | Arithmetic Operators -> [+, * , /, -, MOD]
 data Duop = And | Or | XOr | IsSet
            | Greater | Less | Equal | GreaterEqual | LessEqual | NotEqual
-           | Add | Mul | Div | Sub | Mod | Concat | Pow
+           | Add | Mul | Div | Sub | Mod | Concat | Pow | Truncate
            deriving (Read, Show,Eq)
 
 -- | Statement Grammar
@@ -83,9 +83,9 @@ def = emptyDef{ commentStart = "/*"
               , identLetter = alphaNum <|> char '_'
               , nestedComments = False
               , caseSensitive = True
-              , opStart = oneOf "=<>@|OR&AND+-*/$MOD?isSet~NOT.CONCAT:XOR"
+              , opStart = oneOf "=<>@|OR&AND+-*/$MOD?isSet~NOT.CONCAT:XOR`TRUNC"
               , opLetter = oneOf "=<>@|OR&AND+-*/$MOD?isSet~NOT.CONCAT:XOR"
-              , reservedOpNames = ["**",":=","NOT","~","*","/","MOD","CONCAT","**","+","-",">=","<=","<",">","=","<>","&","AND","OR","XOR","isSet",";"]
+              , reservedOpNames = ["**",":=","NOT","~","*","/","MOD","CONCAT","**","+","-",">=","<=","<",">","=","<>","&","AND","OR","XOR","TRUNC","isSet",";"]
               , reservedNames = ["True", "False", "nop",
                                  "if", "then", "else", "end_if"
                                   ] }
@@ -205,6 +205,8 @@ table = [ [Prefix (sst_reservedOp "~" >> return (Uno Not))]
         , [Infix (sst_reservedOp ">=" >> return (Duo GreaterEqual)) AssocLeft]
         , [Infix (sst_reservedOp "<=" >> return (Duo LessEqual)) AssocLeft]
         , [Infix (sst_reservedOp "<>" >> return (Duo NotEqual)) AssocLeft]
+        , [Infix (sst_reservedOp "`" >> return (Duo Truncate)) AssocLeft]
+        , [Infix (sst_reservedOp "TRUNC" >> return (Duo Truncate)) AssocLeft]
         ]
 
 -- | Term parse each parser one by one
@@ -420,6 +422,10 @@ duopLookUp (XOr) (_) (_) = Left "The two variables or expressions are not compar
 duopLookUp (IsSet) (ConstChar c1) (ConstInteger i) = Right $ ConstBool $ fromEnum c1 `testBit` fromEnum i
 duopLookUp (IsSet) (ConstInteger i1) (ConstInteger i2) = Right $ ConstBool $ fromEnum i1 `testBit` fromEnum i2
 duopLookUp (IsSet) (_) (_) = Left "The two variables or expressions are not comparable"
+
+-- | Truncate function
+duopLookUp (Truncate) (ConstDouble d) (ConstInteger i) = let factor = fromInteger $ 10 ^ i in Right $ ConstDouble $ (fromInteger $ round $ d * factor) / factor
+duopLookup (Truncate) _ _ = Left "Truncate takes a double value and integer number of decimals"
 
 -- ========================Parse Terms===========================
 -- | Parse Boolean
