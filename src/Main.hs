@@ -10,9 +10,9 @@ Portability :  portable
 
 <Main function for STructuredScript>
 -}
-{-# LANGUAGE NoImplicitPrelude #-}
+
 {-# LANGUAGE OverloadedStrings #-}
-import           ClassyPrelude
+import           Data.Text
 
 main :: IO ()
 main = print test

@@ -1,9 +1,9 @@
-{-# LANGUAGE NoImplicitPrelude #-}
+
 {-# LANGUAGE OverloadedStrings #-}
 
 module Language.StructuredScript.ParsersSpec (main, spec) where
 
-import           ClassyPrelude
+
 import           Language.StructuredScript.Parsers
 import           Test.Hspec
 
@@ -88,6 +88,7 @@ testSSTMod = testCaseBase ++ input1 ++ " MOD " ++ input2
 testSSTPow :: String
 testSSTPow = testCaseBase ++ input1 ++ " ** " ++ input2
 
+
 spec :: Spec
 spec = do
   describe "evalExpr" $ do
@@ -135,7 +136,7 @@ spec = do
       -- | Test sst for Modular
       it "should return \"Test for Modular\"" $ do
         (sstTest testListInteger testSSTMod) `shouldBe` (Right $ ConstInteger $ (18 `mod` 7))
-     	(testIsLeft.sstTest testListDouble $ testSSTMod) `shouldBe` True
+        (testIsLeft.sstTest testListDouble $ testSSTMod) `shouldBe` True
         (testIsLeft.sstTest testListString $ testSSTMod) `shouldBe` True
         (testIsLeft.sstTest testListBool $ testSSTMod) `shouldBe` True
         (testIsLeft.sstTest testListChar $ testSSTMod) `shouldBe` True
@@ -145,13 +146,14 @@ spec = do
         (sstTest testListInteger testString2) `shouldBe` (Right $ ConstInteger $ (18 - (-18 `mod` 7)))
 
       it "should return \"Test for Exponent\"" $ do
-        (sstTest testListInteger testSSTPow) `shouldBe` (Right $ ConstInteger $ (18 ^ 7))
-        (sstTest testListDouble (testCaseBase ++ "y:= 2;" ++ input1 ++ " ** " ++ input2)) `shouldBe` (Right $ ConstDouble $ (7.7 ^ 2))
-
+        (sstTest testListInteger testSSTPow) `shouldBe` (Right $ ConstInteger $ (18 ^ (7::Integer)))
+        (sstTest testListDouble (testCaseBase ++ "y:= 2;" ++ input1 ++ " ** " ++ input2)) `shouldBe` (Right $ ConstDouble $ ((7.7::Double) ^ (2::Integer)))
+      it "should return \"Test for Truncate\"" $ do
+        (sstTest [ConstDouble 2.11717] ("x:= input1; \ny:= 2;" ++ input1 ++ " ` 2 " )) `shouldBe` (Right $ ConstDouble $ 2.12 )
   describe "special case \"Divided zero\"" $ do
        it "should return \"a Left Error\"" $ do
-        	(testIsLeft.sstTest testListInteger $ (testCaseBase ++ "y:= 0;" ++ input1 ++ " / " ++ input2)) `shouldBe` True
+        (testIsLeft.sstTest testListInteger $ (testCaseBase ++ "y:= 0;" ++ input1 ++ " / " ++ input2)) `shouldBe` True
 
   describe "special case \"modular zero\"" $ do
-	it "should return \"a Left Error\"" $ do
-        	(testIsLeft.sstTest testListInteger $ (testCaseBase ++ "y:= 0;" ++ input1 ++ " / " ++ input2)) `shouldBe` True
+        it "should return \"a Left Error\"" $ do
+         (testIsLeft.sstTest testListInteger $ (testCaseBase ++ "y:= 0;" ++ input1 ++ " / " ++ input2)) `shouldBe` True

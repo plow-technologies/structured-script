@@ -16,12 +16,16 @@ Portability :  portable
 {-# LANGUAGE OverloadedStrings #-}
 module Language.StructuredScript.Parsers where
 -- Genearl
-import           ClassyPrelude        hiding (foldl', lookup, (<|>))
+import           Data.Functor.Identity (Identity)
+import           Data.Monoid           ((<>))
+import           Data.Text             (Text, pack)
+import           Prelude               hiding (lookup)
 -- Data Container
+
 import           Data.Bits
-import           Data.HashMap.Lazy    hiding (foldl')
-import           Data.List            (foldl')
-import qualified Data.Vector          as V
+import           Data.HashMap.Lazy     hiding (foldl')
+import           Data.List             (foldl')
+import qualified Data.Vector           as V
 import           Text.Parsec
 import           Text.Parsec.Expr
 import           Text.Parsec.Language
@@ -451,6 +455,7 @@ naturalOrDoubleParser :: ParsecT String  u Identity Expr
 naturalOrDoubleParser = sst_naturalOrDouble >>= (\x ->return . makeNum $ x)
                         where makeNum = either makeConstInt makeConstDouble
                               makeConstInt = Con . ConstInteger
+
                               makeConstDouble = Con . ConstDouble
 
 -- | Parses any string type constant to an String

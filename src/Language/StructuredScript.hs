@@ -10,10 +10,9 @@ Portability :  portable
 
 <Not do much right now>
 -}
-{-# LANGUAGE NoImplicitPrelude #-}
+
 {-# LANGUAGE OverloadedStrings #-}
 module Language.StructuredScript where
-import           ClassyPrelude
-
+import           Data.Text
 testZBegin :: IO Text
 testZBegin = return "test"
