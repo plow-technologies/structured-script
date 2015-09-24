@@ -1,3 +1,4 @@
+{-# LANGUAGE RankNTypes        #-}
 {- |
 Module      :  <Language.StructuredScript.Parsers>
 Description :  <Parsers for StructuredScript>
@@ -10,17 +11,17 @@ Portability :  portable
 
 <Parser function to define the grammer of the scheme>
 -}
+{-# LANGUAGE GADTs             #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE GADTs             #-}
 module Language.StructuredScript.Parsers where
 -- Genearl
-import           ClassyPrelude         hiding (lookup, (<|>), foldl')
+import           ClassyPrelude        hiding (foldl', lookup, (<|>))
 -- Data Container
 import           Data.Bits
-import           Data.HashMap.Lazy     hiding (foldl')
-import           Data.List             (foldl')
-import qualified Data.Vector           as V
+import           Data.HashMap.Lazy    hiding (foldl')
+import           Data.List            (foldl')
+import qualified Data.Vector          as V
 import           Text.Parsec
 import           Text.Parsec.Expr
 import           Text.Parsec.Language
@@ -252,7 +253,10 @@ unopLookUp (Neg) (_) = Left "Expected Numeric Values such as Integer or Double"
 -- | Binary Operators
 -- ==Arithmetic Operators==
 -- | Addition Operator -> [ + ]
+
+
 duopLookUp :: Duop -> Const -> Const -> Either String Const
+-- | Truncate function
 duopLookUp (Add) (ConstBool _ ) _ = Left "Expected Double or Integer, received Bool First Argument"
 duopLookUp (Add) (ConstString _) _ = Left "Expected Double or Integer, received String First Argument"
 duopLookUp (Add) (ConstChar _) _ = Left "Expected Double or Integer, received Char First Argument"
@@ -399,6 +403,7 @@ duopLookUp (NotEqual) (ConstDouble d) (ConstInteger i) = Right $ ConstBool $ d /
 duopLookUp (NotEqual) (ConstDouble d1) (ConstDouble d2) = Right $ ConstBool $ d1 /= d2
 duopLookUp (NotEqual) (_) (_) = Left "The two variables are not comparable"
 
+
 -- ==Relational Operators==
 -- | And Relations
 duopLookUp (And) (ConstBool b1) (ConstBool b2) = Right $ ConstBool $ b1 && b2
@@ -422,10 +427,9 @@ duopLookUp (XOr) (_) (_) = Left "The two variables or expressions are not compar
 duopLookUp (IsSet) (ConstChar c1) (ConstInteger i) = Right $ ConstBool $ fromEnum c1 `testBit` fromEnum i
 duopLookUp (IsSet) (ConstInteger i1) (ConstInteger i2) = Right $ ConstBool $ fromEnum i1 `testBit` fromEnum i2
 duopLookUp (IsSet) (_) (_) = Left "The two variables or expressions are not comparable"
-
--- | Truncate function
-duopLookUp (Truncate) (ConstDouble d) (ConstInteger i) = let factor = fromInteger $ 10 ^ i in Right $ ConstDouble $ (fromInteger $ round $ d * factor) / factor
-duopLookup (Truncate) _ _ = Left "Truncate takes a double value and integer number of decimals"
+-- |Truncate
+duopLookUp (Truncate) (ConstDouble d) (ConstInteger i) = let factor = fromInteger $ 10 ^ i in Right $ ConstDouble $ fromInteger (round $ d * factor) / factor
+duopLookUp (Truncate)  _ _ = Left "Truncate takes a double value and integer number of decimals"
 
 -- ========================Parse Terms===========================
 -- | Parse Boolean
