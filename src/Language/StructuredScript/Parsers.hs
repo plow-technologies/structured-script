@@ -1,4 +1,3 @@
-{-# LANGUAGE RankNTypes        #-}
 {- |
 Module      :  <Language.StructuredScript.Parsers>
 Description :  <Parsers for StructuredScript>
@@ -11,17 +10,19 @@ Portability :  portable
 
 <Parser function to define the grammer of the scheme>
 -}
+{-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE GADTs             #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes        #-}
 module Language.StructuredScript.Parsers where
--- Genearl
+-- General
 import           Data.Functor.Identity (Identity)
 import           Data.Monoid           ((<>))
 import           Data.Text             (Text, pack)
 import           Prelude               hiding (lookup)
 -- Data Container
-
+import           GHC.Generics          hiding (Prefix, Infix)
 import           Data.Bits
 import           Data.HashMap.Lazy     hiding (foldl')
 import           Data.List             (foldl')
@@ -43,10 +44,10 @@ x := true;
 
 -- | Expression Grammar
 data Expr = Var String | Con Const | Uno Unop Expr | Duo Duop Expr Expr
-    deriving (Show,Read,Eq)
+    deriving (Show,Read,Eq,Generic)
 
 type VType = Const
-newtype VarTable = VT (HashMap Text VType) deriving (Show, Eq)
+newtype VarTable = VT (HashMap Text VType) deriving (Show,Eq,Read,Generic)
 
 emptyVTable :: VarTable
 emptyVTable = VT empty
@@ -58,10 +59,10 @@ data Const = ConstBool Bool
            | ConstString String
            | ConstChar Char
            | ConstDouble Double
-           deriving (Show, Eq, Ord,Read)
+           deriving (Show, Eq, Ord,Read,Generic)
 
 -- | Unary Operators [~,-]
-data Unop = Not | Neg deriving (Show,Eq,Read)
+data Unop = Not | Neg deriving (Show,Eq,Read,Generic)
 
 -- | Binary Operators
 -- | Relational Operators -> [&&, ||, XOR]
@@ -70,13 +71,13 @@ data Unop = Not | Neg deriving (Show,Eq,Read)
 data Duop = And | Or | XOr | IsSet
            | Greater | Less | Equal | GreaterEqual | LessEqual | NotEqual
            | Add | Mul | Div | Sub | Mod | Concat | Pow | Truncate
-           deriving (Read, Show,Eq)
+           deriving (Read, Show,Eq,Generic)
 
 -- | Statement Grammar
 -- | ~stmt | External | x: = a + b | if (a == b) stmt1 stmt2
 data Stmt = Nop | External | String := Expr | If Expr Stmt Stmt
           | Seq [Stmt]
-          deriving (Show, Read,Eq)
+          deriving (Show, Read,Eq,Generic)
 
 -- | General Language Rules
 -- | Comment: "/* */
@@ -558,11 +559,3 @@ sstTest lst s = do
     case sstLookupOutput result of
             Left e -> Left $ show e
             Right r -> Right r
-
-
-
-
-
-
-
-
