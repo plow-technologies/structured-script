@@ -40,7 +40,7 @@ Test-Suite spec
                       , transformers
                       , unordered-containers
                       , vector
-
+                      , QuickCheck
 
 Executable structured-script-lang
     main-is:            Main.hs
