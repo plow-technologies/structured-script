@@ -17,25 +17,26 @@ Library
                         Language.StructuredScript.Parsers
 
   Other-Modules:        Language.StructuredScript.Internal
-  Build-Depends:         
+  Build-Depends:
                            base                  >= 4         &&   < 5
                          , parsec
-                         , text 
+                         , text
                          , transformers
                          , unordered-containers
                          , vector
+                         , QuickCheck
 
 Test-Suite spec
   Type:                 exitcode-stdio-1.0
   Default-Language:     Haskell2010
   Hs-Source-Dirs:       test
-                        ,src    
+                        ,src
   Ghc-Options:          -Wall
   Main-Is:              Spec.hs
   Build-Depends:        base                   >= 4         &&   < 5
                       , hspec
                       , parsec
-                      , text 
+                      , text
                       , transformers
                       , unordered-containers
                       , vector
@@ -45,8 +46,8 @@ Executable structured-script-lang
     main-is:            Main.hs
     HS-Source-Dirs:     src
     build-depends:      base                   >= 4         &&   < 5
-                      , text 
-                                          
+                      , text
+
     ghc-options:      -threaded -O2 -rtsopts
 
 Source-Repository head
