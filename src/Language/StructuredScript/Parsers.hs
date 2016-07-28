@@ -27,6 +27,8 @@ import           Data.Bits
 import           Data.HashMap.Lazy     hiding (foldl')
 import           Data.List             (foldl')
 import qualified Data.Vector           as V
+
+import           Test.QuickCheck      hiding ((.&.))
 import           Text.Parsec
 import           Text.Parsec.Expr
 import           Text.Parsec.Language
@@ -46,8 +48,16 @@ x := true;
 data Expr = Var String | Con Const | Uno Unop Expr | Duo Duop Expr Expr
     deriving (Show,Read,Eq,Generic)
 
+instance Arbitrary Expr where
+  arbitrary = oneof [ Var <$> arbitrary
+                    , Con <$> arbitrary
+                    , Uno <$> arbitrary <*> arbitrary
+                    , Duo <$> arbitrary <*> arbitrary <*> arbitrary]
+
 type VType = Const
 newtype VarTable = VT (HashMap Text VType) deriving (Show,Eq,Read,Generic)
+--instance Arbitrary VarTable where
+--  arbitrary = VT <$> arbitrary <*> arbitrary <*> arbitrary
 
 emptyVTable :: VarTable
 emptyVTable = VT empty
@@ -61,8 +71,18 @@ data Const = ConstBool Bool
            | ConstDouble Double
            deriving (Show, Eq, Ord,Read,Generic)
 
+instance Arbitrary Const where
+  arbitrary = oneof [ ConstBool    <$> arbitrary
+                    , ConstInteger <$> arbitrary
+                    , ConstString  <$> arbitrary
+                    , ConstChar    <$> arbitrary
+                    , ConstDouble  <$> arbitrary]
+
 -- | Unary Operators [~,-]
 data Unop = Not | Neg deriving (Show,Eq,Read,Generic)
+
+instance Arbitrary Unop where
+  arbitrary = oneof [pure Not, pure Neg]
 
 -- | Binary Operators
 -- | Relational Operators -> [&&, ||, XOR]
@@ -73,12 +93,36 @@ data Duop = And | Or | XOr | IsSet
            | Add | Mul | Div | Sub | Mod | Concat | Pow | Truncate
            deriving (Read, Show,Eq,Generic)
 
+instance Arbitrary Duop where
+  arbitrary = oneof [ pure And
+                    , pure Or
+                    , pure XOr
+                    , pure IsSet
+                    , pure Greater
+                    , pure Less
+                    , pure Equal
+                    , pure GreaterEqual
+                    , pure LessEqual
+                    , pure NotEqual
+                    , pure Add
+                    , pure Mul
+                    , pure Div
+                    , pure Sub
+                    , pure Mod
+                    , pure Concat
+                    , pure Pow
+                    , pure Truncate]
 -- | Statement Grammar
 -- | ~stmt | External | x: = a + b | if (a == b) stmt1 stmt2
 data Stmt = Nop | External | String := Expr | If Expr Stmt Stmt
           | Seq [Stmt]
           deriving (Show, Read,Eq,Generic)
 
+instance Arbitrary Stmt where
+  arbitrary = oneof [ pure Nop
+                    , pure External
+                    , If <$> arbitrary <*> arbitrary <*> arbitrary
+                    , Seq <$> arbitrary]
 -- | General Language Rules
 -- | Comment: "/* */
 -- | Reserved Words:  True | False | nop | if | then | else |end_if
