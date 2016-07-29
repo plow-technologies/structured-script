@@ -51,8 +51,10 @@ data Expr = Var String | Con Const | Uno Unop Expr | Duo Duop Expr Expr
 instance Arbitrary Expr where
   arbitrary = oneof [ Var <$> arbitrary
                     , Con <$> arbitrary
-                    , Uno <$> arbitrary <*> arbitrary
-                    , Duo <$> arbitrary <*> arbitrary <*> arbitrary]
+                    -- manually pick Var for Uno and Duo to prevent the arbitrary
+                    -- AST from becoming too large
+                    , Uno <$> arbitrary <*> (Var <$> arbitrary)
+                    , Duo <$> arbitrary <*> (Var <$> arbitrary) <*> (Var <$> arbitrary)]
 
 type VType = Const
 newtype VarTable = VT (HashMap Text VType) deriving (Show,Eq,Read,Generic)
@@ -121,8 +123,9 @@ data Stmt = Nop | External | String := Expr | If Expr Stmt Stmt
 instance Arbitrary Stmt where
   arbitrary = oneof [ pure Nop
                     , pure External
-                    , If <$> arbitrary <*> arbitrary <*> arbitrary
-                    , Seq <$> arbitrary]
+                    -- restrict the growth of the AST tree
+                    , If <$> (Var <$> arbitrary) <*> (pure Nop) <*> (pure Nop)
+                    , Seq <$> pure [Nop]]
 -- | General Language Rules
 -- | Comment: "/* */
 -- | Reserved Words:  True | False | nop | if | then | else |end_if
