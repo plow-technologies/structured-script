@@ -7,12 +7,13 @@ License:                BSD3
 License-File:           LICENSE
 Synopsis:               Structured Script package from plow
 Description:            structrued script lang from plow
-Cabal-Version:          >= 1.8
+Cabal-Version:          >= 1.10
 Build-Type:             Simple
 
 Library
   HS-Source-Dirs:       src
   GHC-Options:          -Wall
+  Default-Language:     Haskell2010
   Exposed-Modules:      Language.StructuredScript
                         Language.StructuredScript.Parsers
 
@@ -33,6 +34,10 @@ Test-Suite spec
                         ,src
   Ghc-Options:          -Wall
   Main-Is:              Spec.hs
+  Other-Modules:        Language.StructuredScript
+                        Language.StructuredScript.Parsers
+                        Language.StructuredScript.ParsersSpec
+                        Language.StructuredScriptSpec
   Build-Depends:        base                   >= 4         &&   < 5
                       , hspec
                       , parsec
@@ -44,6 +49,7 @@ Test-Suite spec
 
 Executable structured-script-lang
     main-is:            Main.hs
+    Default-Language:     Haskell2010
     HS-Source-Dirs:     src
     build-depends:      base                   >= 4         &&   < 5
                       , text
